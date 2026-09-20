@@ -158,6 +158,11 @@ export function AppProvider({ children }) {
     saveParticipant(nextParticipant || null);
   }, []);
 
+  const clearParticipant = useCallback(() => {
+    setParticipantState(null);
+    saveParticipant(null);
+  }, []);
+
   useEffect(() => {
     getMarkets()
       .then((items) => setMarkets(Array.isArray(items) ? items : []))
@@ -267,9 +272,10 @@ export function AppProvider({ children }) {
         );
 
       const nearestMarket = marketsWithinFiveKm[0] || null;
+      const demoDefaultMarket = merged.find((m) => m.id === "demo-ina") || merged[0] || null;
       const recommended = forVendor
-        ? nearestMarket
-        : intelligenceMarket || nearestMarket || merged[0] || null;
+        ? nearestMarket || (dataSource === "DEMO" ? demoDefaultMarket : null)
+        : intelligenceMarket || nearestMarket || demoDefaultMarket || null;
 
       const result = {
         ok: true,
@@ -349,6 +355,7 @@ export function AppProvider({ children }) {
       markets,
       participant,
       setParticipant,
+      clearParticipant,
       marketId,
       setMarketId,
       currentMarket,
@@ -368,6 +375,7 @@ export function AppProvider({ children }) {
       markets,
       participant,
       setParticipant,
+      clearParticipant,
       marketId,
       setMarketId,
       currentMarket,

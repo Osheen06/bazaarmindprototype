@@ -3,8 +3,7 @@
   "name": "BazaarMind — The Market That Thinks as One",
   "description": "A WhatsApp-first intelligence layer for neighborhood markets in Delhi NCR.",
   "icons": [
-    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" },
-    { "src": "icon-512.png", "type": "image/png", "sizes": "192x192", "purpose": "any" }
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
   ],
   "start_url": ".",
   "display": "standalone",

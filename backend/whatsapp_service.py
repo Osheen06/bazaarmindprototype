@@ -65,7 +65,7 @@ def valid_signature(raw: bytes, header: str | None) -> bool:
     if not APP_SECRET or not header or not header.startswith("sha256="):
         return False
     received = header.removeprefix("sha256=")
-    expected = hmac.new(APP_SECRET.encode(), raw, hashlib.sha256).hexdigest()
+    expected = hmac.HMAC(APP_SECRET.encode(), raw, hashlib.sha256).hexdigest()
     return hmac.compare_digest(received, expected)
 
 

@@ -15,17 +15,7 @@ def _iso(dt):
     return dt.astimezone(timezone.utc).isoformat()
 
 
-def _haversine_km(lat1, lng1, lat2, lng2):
-    radius = 6371.0
-    dlat = math.radians(lat2 - lat1)
-    dlng = math.radians(lng2 - lng1)
-    a = (
-        math.sin(dlat / 2) ** 2
-        + math.cos(math.radians(lat1))
-        * math.cos(math.radians(lat2))
-        * math.sin(dlng / 2) ** 2
-    )
-    return 2 * radius * math.asin(math.sqrt(min(1.0, a)))
+from utils import haversine_km as _haversine_km
 
 
 class VendorLocationOn(BaseModel):
@@ -76,7 +66,10 @@ def build_router(db):
             if not participant:
                 raise HTTPException(403, "Vendor is not onboarded for this market.")
 
-        # Do not accept a vendor location wildly outside the selected market.
+        # Do not accept a vendor location wildly outside the selected market in production.
+        # In DEMO prototype mode, snap to the demo market coordinates so anyone can test the prototype.
+        actual_lat = req.lat
+        actual_lng = req.lng
         mlat = market.get("lat")
         mlng = market.get("lng")
         if mlat is not None and mlng is not None:
@@ -84,11 +77,15 @@ def build_router(db):
                 req.lat, req.lng, float(mlat), float(mlng)
             )
             if market_distance > 5.0:
-                raise HTTPException(
-                    400,
-                    "Your device is more than 5 km from the selected market. "
-                    "Select the correct market before turning on stall location.",
-                )
+                if source == "DEMO":
+                    actual_lat = float(mlat)
+                    actual_lng = float(mlng)
+                else:
+                    raise HTTPException(
+                        400,
+                        "Your device is more than 5 km from the selected market. "
+                        "Select the correct market before turning on stall location.",
+                    )
 
         expires = _now() + timedelta(minutes=req.durationMinutes)
 
@@ -109,8 +106,8 @@ def build_router(db):
             "marketId": req.marketId,
             "vendorName": req.vendorName or "BazaarMind Vendor",
             "stallName": req.stallName or req.vendorName or "Vendor stall",
-            "lat": req.lat,
-            "lng": req.lng,
+            "lat": actual_lat,
+            "lng": actual_lng,
             "accuracyMeters": req.accuracyMeters,
             "dataSource": source,
             "synthetic": source == "DEMO",

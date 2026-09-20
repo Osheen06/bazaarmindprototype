@@ -256,7 +256,7 @@ function StatCard({ icon: Icon, label, value, tone, desc }) {
   const tones = { green: "bg-[#1E5631]/8 text-[#1E5631]", orange: "bg-[#D96B27]/10 text-[#B4571E]" };
   return (
     <div className="bg-white border border-[#E5DEC9] rounded-2xl p-4">
-      <div className={`h-9 w-9 rounded-lg ${tones[tone]} flex items-center justify-center`}><Icon className="h-4.5 w-4.5 h-5 w-5" /></div>
+      <div className={`h-9 w-9 rounded-lg ${tones[tone]} flex items-center justify-center`}><Icon className="h-5 w-5" /></div>
       <div className="font-display text-2xl font-bold text-[#1E2022] mt-2">{value}</div>
       <div className="text-xs font-semibold tracking-wide uppercase text-[#5C6360]">{label}</div>
       <div className="text-[11px] text-[#8A8A82] mt-0.5">{desc}</div>

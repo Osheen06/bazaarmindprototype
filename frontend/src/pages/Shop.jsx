@@ -106,7 +106,7 @@ export default function Shop() {
           disabled={busy}
           className="h-11 w-11 rounded-full bg-[#1E5631] text-[#FDFBF7] flex items-center justify-center hover:bg-[#194727] disabled:opacity-50 transition-colors"
         >
-          <Send className="h-4.5 w-4.5 h-5 w-5" />
+          <Send className="h-5 w-5" />
         </button>
       </div>
     </div>
@@ -142,7 +142,7 @@ function ListResult({ data }) {
           <div key={it.product} className="flex items-center justify-between py-2.5 gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               {it.status === "tight" ? (
-                <AlertTriangle className="h-4.5 w-4.5 h-5 w-5 text-[#B4571E] shrink-0" />
+                <AlertTriangle className="h-5 w-5 text-[#B4571E] shrink-0" />
               ) : it.status === "unknown" ? (
                 <HelpCircle className="h-5 w-5 text-[#8A8A82] shrink-0" />
               ) : (

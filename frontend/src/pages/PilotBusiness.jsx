@@ -94,7 +94,23 @@ function Onboard() {
     setInvite(res);
     trackEvent("pilot_invite_created");
   };
-  const copy = () => { navigator.clipboard.writeText(link); toast.success("Invite link copied."); };
+  const copy = async () => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = link;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+      toast.success("Invite link copied.");
+    } catch {
+      toast.error("Could not copy link automatically. Please copy manually.");
+    }
+  };
   const share = () => window.open(`https://wa.me/?text=${encodeURIComponent(`Join our BazaarMind market pilot: ${link}`)}`, "_blank");
 
   return (

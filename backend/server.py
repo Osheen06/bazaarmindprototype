@@ -3,6 +3,7 @@ import uuid
 import math
 import logging
 from pathlib import Path
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 logging.basicConfig(
@@ -18,18 +19,85 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
+from utils import haversine_km
 
 ROOT_DIR = Path(__file__).resolve().parent
 load_dotenv(ROOT_DIR / ".env")
 
 # Load environment before importing services that read configuration.
-mongo_url = os.environ["MONGO_URL"]
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ["DB_NAME"]]
+mongo_url = os.environ.get("MONGO_URL")
+if not mongo_url:
+    raise RuntimeError(
+        "MONGO_URL environment variable is required. "
+        "Set it to your MongoDB connection string (e.g. mongodb://localhost:27017)."
+    )
+
+db_name = os.environ.get("DB_NAME")
+if not db_name:
+    raise RuntimeError(
+        "DB_NAME environment variable is required (e.g. bazaarmind)."
+    )
+
+def _init_db():
+    use_mock = mongo_url.startswith("mock://") or os.environ.get("USE_MOCK_MONGO") == "true"
+    if not use_mock:
+        try:
+            import certifi
+            from pymongo import MongoClient
+            test_c = MongoClient(mongo_url, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=2000)
+            test_c.admin.command("ping")
+            real_c = AsyncIOMotorClient(mongo_url, tlsCAFile=certifi.where())
+            logger.info("Connected to MongoDB Atlas successfully.")
+            return real_c, real_c[db_name]
+        except Exception as err:
+            logger.warning(
+                "MongoDB Atlas connection not ready (%s). If using Atlas, add 0.0.0.0/0 to Network Access. "
+                "Starting with resilient in-memory store for demo.",
+                type(err).__name__,
+            )
+    from mongomock_motor import AsyncMongoMockClient
+    mock_c = AsyncMongoMockClient()
+    return mock_c, mock_c[db_name]
+
+client, db = _init_db()
 
 WEBHOOK_CRON_SECRET = os.environ.get("WEBHOOK_CRON_SECRET", "")
 
-app = FastAPI(title="BazaarMind API")
+
+@asynccontextmanager
+async def lifespan(app):
+    # --- startup ---
+    loc_router = globals().get("location_router")
+    st_router = globals().get("stall_router")
+    ensure_location_indexes = getattr(loc_router, "ensure_indexes", None)
+    ensure_stall_indexes = getattr(st_router, "ensure_indexes", None)
+
+    if ensure_location_indexes:
+        await ensure_location_indexes()
+    if ensure_stall_indexes:
+        await ensure_stall_indexes()
+
+    try:
+        await db.pilot_invites.create_index([("code", 1)], unique=True)
+    except Exception:
+        pass
+
+    await demo_seed.seed_if_empty(db)
+
+    logger.info(
+        "BazaarMind ready. Gemini=%s WhatsApp configured=%s Voice=%s",
+        gemini_service.GEMINI_MODEL,
+        whatsapp_service.is_configured(),
+        voice_service.is_configured(),
+    )
+
+    yield
+
+    # --- shutdown ---
+    client.close()
+
+
+app = FastAPI(title="BazaarMind API", lifespan=lifespan)
 api = APIRouter(prefix="/api")
 
 import location_routes
@@ -115,11 +183,13 @@ def _resolve_source(participant_id: Optional[str], explicit: Optional[str]) -> s
 
 
 async def _resolve_source_async(participant_id: Optional[str], explicit: Optional[str]) -> str:
-    if explicit in ("DEMO", "PILOT", "REAL"):
-        return explicit
     if participant_id:
         exists = await db.pilot_participants.find_one({"id": participant_id}, {"_id": 1})
-        return "PILOT" if exists else "DEMO"
+        if exists:
+            return "PILOT" if explicit != "REAL" else "REAL"
+        return "DEMO"
+    if explicit in ("DEMO", "REAL"):
+        return explicit
     return "DEMO"
 
 
@@ -189,21 +259,6 @@ async def markets_nearby(
         {},
         {"_id": 0}
     ).to_list(200)
-
-    def haversine_km(a_lat: float, a_lng: float, b_lat: float, b_lng: float) -> float:
-        earth_radius_km = 6371.0
-
-        d_lat = math.radians(b_lat - a_lat)
-        d_lng = math.radians(b_lng - a_lng)
-
-        a = (
-            math.sin(d_lat / 2) ** 2
-            + math.cos(math.radians(a_lat))
-            * math.cos(math.radians(b_lat))
-            * math.sin(d_lng / 2) ** 2
-        )
-
-        return 2 * earth_radius_km * math.asin(math.sqrt(a))
 
     nearby = []
 
@@ -641,7 +696,7 @@ class InviteCreate(BaseModel):
 
 @api.post("/pilot/invite")
 async def create_invite(req: InviteCreate):
-    code = uuid.uuid4().hex[:8]
+    code = uuid.uuid4().hex[:12]
     doc = {"code": code, "community": req.community, "marketId": req.marketId, "createdAt": now_iso()}
     await db.pilot_invites.insert_one({**doc})
     return {"ok": True, **doc}
@@ -690,7 +745,11 @@ async def whatsapp_inbound(request: Request):
             continue
         await db.messages.insert_one({"id": str(uuid.uuid4()), "wamid": wamid, "conversationId": from_number,
                                       "direction": "inbound", "text": text, "channel": "whatsapp", "at": now_iso()})
-        result = await conversation.process_message(db, text, DEFAULT_MARKET, role="shopper")
+        participant = await db.pilot_participants.find_one({"phone": from_number}) or await db.pilot_participants.find_one({"id": from_number})
+        data_source = "PILOT" if participant else "DEMO"
+        user_role = participant.get("role", "shopper") if participant else "shopper"
+        market_id = participant.get("marketId", DEFAULT_MARKET) if participant else DEFAULT_MARKET
+        result = await conversation.process_message(db, text, market_id, role=user_role, data_source=data_source)
         reply = result.get("reply", "")
         send = await whatsapp_service.send_text(from_number, reply)
         await db.messages.insert_one({"id": str(uuid.uuid4()), "conversationId": from_number, "direction": "outbound",
@@ -751,6 +810,14 @@ _raw_cors = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://localho
 _cors_origins = [origin.strip().rstrip("/") for origin in _raw_cors.split(",") if origin.strip()]
 _cors_wildcard = "*" in _cors_origins
 
+# Warn if CORS is still set to localhost defaults in a non-local environment.
+if all("localhost" in o or "127.0.0.1" in o for o in _cors_origins):
+    logger.warning(
+        "CORS_ORIGINS is set to localhost only (%s). "
+        "Set CORS_ORIGINS to your Vercel frontend URL for production.",
+        _raw_cors,
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=not _cors_wildcard,
@@ -758,29 +825,3 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def _startup():
-    # Build indexes without making index failures fatal to application startup.
-    ensure_location_indexes = getattr(location_router, "ensure_indexes", None)
-    if ensure_location_indexes:
-        await ensure_location_indexes()
-
-    ensure_stall_indexes = getattr(stall_router, "ensure_indexes", None)
-    if ensure_stall_indexes:
-        await ensure_stall_indexes()
-
-    await demo_seed.seed_if_empty(db)
-
-    logger.info(
-        "BazaarMind ready. Gemini=%s WhatsApp configured=%s Voice=%s",
-        gemini_service.GEMINI_MODEL,
-        whatsapp_service.is_configured(),
-        voice_service.is_configured(),
-    )
-
-
-@app.on_event("shutdown")
-async def _shutdown():
-    client.close()

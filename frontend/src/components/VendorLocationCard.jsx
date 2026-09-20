@@ -150,7 +150,11 @@ export default function VendorLocationCard({
         forVendor: true,
         position,
       });
-      const resolvedMarketId = nearby?.recommendedMarketId;
+      let resolvedMarketId = nearby?.recommendedMarketId;
+
+      if (!resolvedMarketId && dataSource === "DEMO") {
+        resolvedMarketId = marketId || "demo-ina";
+      }
 
       if (!resolvedMarketId) {
         throw new Error(
@@ -162,14 +166,21 @@ export default function VendorLocationCard({
         setMarketId(resolvedMarketId);
       }
 
+      let vendorLat = position.coords.latitude;
+      let vendorLng = position.coords.longitude;
+      if (dataSource === "DEMO" && currentMarket?.lat && currentMarket?.lng) {
+        vendorLat = currentMarket.lat;
+        vendorLng = currentMarket.lng;
+      }
+
       const payload = {
         marketId: resolvedMarketId,
         vendorId,
         participantId: participant?.id || null,
         vendorName: vendorName.trim() || "BazaarMind Vendor",
         stallName: stallName.trim() || "My stall",
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
+        lat: vendorLat,
+        lng: vendorLng,
         accuracyMeters: position.coords.accuracy,
         dataSource,
         durationMinutes: 480,

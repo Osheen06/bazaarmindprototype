@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   Mic, Camera, Type, Send, Store, Users, CheckCircle2, Pencil, X, Sparkles, TrendingUp, Zap,
 } from "lucide-react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "../components/ui/dialog";
 import { interpretSignal, createSignal, getVendorDemand, listSignals, transcribeAudio, getVoiceStatus, trackEvent } from "../lib/api";
 import { useApp } from "../context/AppContext";
@@ -38,12 +38,15 @@ export default function Vendor() {
   const chunksRef = useRef([]);
   const fileRef = useRef(null);
 
-  const loadSide = () => {
+  const loadSide = useCallback(() => {
     getVendorDemand(marketId, dataSource).then(setDemand).catch(() => {});
     listSignals(marketId).then((s) => setRecent(s.filter((x) => x.source === "VENDOR").slice(0, 6))).catch(() => {});
-  };
+  }, [marketId, dataSource]);
 
-  useEffect(() => { loadSide(); trackEvent("vendor_home_viewed"); /* eslint-disable-next-line */ }, [marketId, dataSource]);
+  useEffect(() => {
+    loadSide();
+    trackEvent("vendor_home_viewed");
+  }, [loadSide]);
 
   useEffect(() => { getVoiceStatus().then((s) => setVoiceOk(s.configured)).catch(() => setVoiceOk(false)); }, []);
 
@@ -281,6 +284,9 @@ export default function Vendor() {
             <DialogTitle className="font-display flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-[#1E5631]" /> Here's what BazaarMind understood
             </DialogTitle>
+            <DialogDescription className="text-xs text-[#5C6360]">
+              Review and confirm your market observation before publishing.
+            </DialogDescription>
           </DialogHeader>
           {draft && (
             <div className="space-y-3">

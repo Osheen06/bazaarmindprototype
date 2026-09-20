@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { RefreshCw, ShieldCheck } from "lucide-react";
 import { getMarketPulse, trackEvent } from "../lib/api";
@@ -12,15 +12,18 @@ export default function MarketPulse() {
   const [pulse, setPulse] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     getMarketPulse(marketId, dataSource)
       .then(setPulse)
       .catch(() => setPulse(null))
       .finally(() => setLoading(false));
-  };
+  }, [marketId, dataSource]);
 
-  useEffect(() => { load(); trackEvent("market_pulse_viewed"); /* eslint-disable-next-line */ }, [marketId, pulseVersion, dataSource]);
+  useEffect(() => {
+    load();
+    trackEvent("market_pulse_viewed");
+  }, [load, pulseVersion]);
 
   return (
     <div>

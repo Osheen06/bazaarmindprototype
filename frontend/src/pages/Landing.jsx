@@ -4,8 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Radio, Network, Store, Users, Sparkles, MessageSquare } from "lucide-react";
 import { trackEvent } from "../lib/api";
 
-const HERO_IMG =
-  "https://images.pexels.com/photos/37904046/pexels-photo-37904046.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940";
+const HERO_IMG = null; // Removed external Pexels dependency — using CSS gradient instead
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -73,8 +72,13 @@ export default function Landing() {
           initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }}
           className="relative"
         >
-          <div className="rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-[0_20px_60px_rgba(30,32,34,0.14)]">
-            <img src={HERO_IMG} alt="Delhi neighborhood market" className="w-full h-[300px] md:h-[420px] object-cover" />
+          <div className="rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-[0_20px_60px_rgba(30,32,34,0.14)] relative">
+            <img
+              src={process.env.PUBLIC_URL + "/images/mandi.jpg"}
+              alt="Delhi neighborhood vegetable market"
+              className="w-full h-[300px] md:h-[420px] object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
           </div>
           <FlywheelCard />
         </motion.div>

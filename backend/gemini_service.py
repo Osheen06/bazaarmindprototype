@@ -9,6 +9,7 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 import json
 import re
 import base64
+import asyncio
 import logging
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, Literal, List
@@ -19,7 +20,7 @@ from google.genai import types
 logger = logging.getLogger(__name__)
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-pro-preview")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 CANONICAL_PRODUCTS = [
     "Tomatoes", "Potatoes", "Onions", "Coriander",
@@ -70,7 +71,6 @@ def _explicit_price_unit(text: str) -> Optional[str]:
         (r'\b(?:litre|liter)\b', 'litre'),
     ]
 
-    import re
 
     for pattern, unit in unit_patterns:
         if re.search(pattern, t):
@@ -189,7 +189,8 @@ async def interpret_signal(text: str, image_base64: Optional[str] = None, sessio
         contents.append(types.Part.from_bytes(data=raw, mime_type=image_mime_type or "image/jpeg"))
         contents.append("Use the image only as supporting visible evidence. Never infer exact inventory quantities.")
 
-    response = await client.aio.models.generate_content(
+    response = await asyncio.to_thread(
+        client.models.generate_content,
         model=GEMINI_MODEL,
         contents=contents,
         config=types.GenerateContentConfig(
@@ -254,7 +255,8 @@ Never invent quantities. Ignore filler words.
 async def parse_shopping_list(text: str, session_id: str = "list") -> Dict[str, Any]:
     del session_id
     client = _client()
-    response = await client.aio.models.generate_content(
+    response = await asyncio.to_thread(
+        client.models.generate_content,
         model=GEMINI_MODEL,
         contents=f'Parse this shopping list:\n"{text}"',
         config=types.GenerateContentConfig(
@@ -305,7 +307,8 @@ async def ask_bazaar(question: str, market_context: str, session_id: str = "ask"
     client = _client()
     source_label = "synthetic DEMO signals" if data_source == "DEMO" else f"{data_source} signals"
     prompt = f"Market evidence source: {source_label}.\n{market_context}\n\nUser question: \"{question}\"\n\nAnswer strictly from the evidence above."
-    response = await client.aio.models.generate_content(
+    response = await asyncio.to_thread(
+        client.models.generate_content,
         model=GEMINI_MODEL,
         contents=prompt,
         config=types.GenerateContentConfig(
