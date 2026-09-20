@@ -78,7 +78,7 @@ export default function VendorLocationCard({
   participant,
   onLocationChange,
 }) {
-  const { findNearbyMarkets, setMarketId } = useApp();
+  const { findNearbyMarkets, setMarketId, currentMarket } = useApp();
 
   const vendorId = useMemo(
     () => participant?.id || getStableVendorId(),
@@ -168,9 +168,9 @@ export default function VendorLocationCard({
 
       let vendorLat = position.coords.latitude;
       let vendorLng = position.coords.longitude;
-      if (dataSource === "DEMO" && currentMarket?.lat && currentMarket?.lng) {
-        vendorLat = currentMarket.lat;
-        vendorLng = currentMarket.lng;
+      if (dataSource === "DEMO") {
+        vendorLat = currentMarket?.lat || 28.5687;
+        vendorLng = currentMarket?.lng || 77.2094;
       }
 
       const payload = {

@@ -12,6 +12,7 @@ import {
   discoverNearbyMarkets,
   registerDiscoveredMarket,
 } from "../lib/api";
+import { DEFAULT_MARKETS } from "../lib/demoData";
 
 const AppContext = createContext(null);
 
@@ -132,7 +133,7 @@ function mergeMarkets(registered = [], discovered = []) {
 }
 
 export function AppProvider({ children }) {
-  const [markets, setMarkets] = useState([]);
+  const [markets, setMarkets] = useState(DEFAULT_MARKETS);
   const [participant, setParticipantState] = useState(loadParticipant);
   const [marketId, setMarketIdState] = useState(loadMarketId);
   const [pulseVersion, setPulseVersion] = useState(0);
@@ -165,7 +166,11 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     getMarkets()
-      .then((items) => setMarkets(Array.isArray(items) ? items : []))
+      .then((items) => {
+        if (Array.isArray(items) && items.length) {
+          setMarkets(items);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -173,7 +178,8 @@ export function AppProvider({ children }) {
     return (
       markets.find((m) => m.id === marketId) ||
       nearbyMarkets.find((m) => m.id === marketId) ||
-      null
+      DEFAULT_MARKETS.find((m) => m.id === marketId) ||
+      DEFAULT_MARKETS[0]
     );
   }, [markets, nearbyMarkets, marketId]);
 
@@ -272,10 +278,10 @@ export function AppProvider({ children }) {
         );
 
       const nearestMarket = marketsWithinFiveKm[0] || null;
-      const demoDefaultMarket = merged.find((m) => m.id === "demo-ina") || merged[0] || null;
+      const demoDefaultMarket = merged.find((m) => m.id === "demo-ina") || merged[0] || DEFAULT_MARKETS[0];
       const recommended = forVendor
         ? nearestMarket || (dataSource === "DEMO" ? demoDefaultMarket : null)
-        : intelligenceMarket || nearestMarket || demoDefaultMarket || null;
+        : intelligenceMarket || nearestMarket || demoDefaultMarket || DEFAULT_MARKETS[0];
 
       const result = {
         ok: true,

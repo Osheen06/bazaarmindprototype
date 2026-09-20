@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
 import { AppProvider } from "./context/AppContext";
 import Layout from "./components/Layout";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Landing from "./pages/Landing";
 import MarketPulse from "./pages/MarketPulse";
 import MarketNetwork from "./pages/MarketNetwork";
@@ -20,8 +21,9 @@ const withShell = (el) => <Layout>{el}</Layout>;
 export default function App() {
   return (
     <div className="App">
-      <AppProvider>
-        <BrowserRouter>
+      <ErrorBoundary>
+        <AppProvider>
+          <BrowserRouter>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/pulse" element={withShell(<MarketPulse />)} />
@@ -37,6 +39,7 @@ export default function App() {
           <Toaster position="top-center" richColors />
         </BrowserRouter>
       </AppProvider>
-    </div>
+    </ErrorBoundary>
+  </div>
   );
 }
