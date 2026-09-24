@@ -20,7 +20,6 @@ BazaarMind uses **Google Gemini** to interpret these natural conversations and c
 
 **Web App:** https://bazaarmind.vercel.app/
 
-**Repository:** https://github.com/Osheen06/BazaarMind
 
 > The current deployment is a working prototype. Some market information shown in demo mode is synthetic/illustrative and is explicitly separated from real pilot data.
 
