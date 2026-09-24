@@ -1,49 +1,64 @@
-# BazaarMind Location Key Fix
+# BazaarMind — The Market That Thinks As One
 
-This update fixes the Google Places configuration issue.
+> **Every shopper is a signal. Every vendor is a sensor. The market is the network. Gemini is the interpreter.**
 
-## Why the API reported configured=false
+**BazaarMind** is an intelligence layer for India's neighbourhood markets that connects what shoppers want with what vendors see every day.
 
-The previous server imported `location_routes` before calling `load_dotenv()`.
-`location_routes` imports `market_discovery`, which previously read
-`GOOGLE_MAPS_API_KEY` at module import time. Therefore the key was read as
-empty even though it existed in `backend/.env`.
+Local markets already generate valuable information through ordinary conversations:
 
-This update:
-1. Loads `.env` before importing `location_routes`.
-2. Makes `market_discovery.py` read `GOOGLE_MAPS_API_KEY` at call time.
+> “Tamatar kitne ka hai?”  
+> “Aaj stock kam aaya.”  
+> “Mujhe 2 kilo tamatar aur thoda dhaniya chahiye.”
 
-## Install
+These conversations contain signals about **demand, availability, supply, scarcity and observed prices** — but they are scattered across individuals and usually disappear after the conversation.
 
-Replace these two files in the backend:
-- `server.py`
-- `market_discovery.py`
+BazaarMind uses **Google Gemini** to interpret these natural conversations and convert them into structured market signals. These signals are then combined into a **Market Pulse**: a shared, living view of what is happening in a local market.
 
-Keep your existing `backend/.env` and do not commit it.
+---
 
-## Test
+## 🚀 Live Prototype
 
-Restart Uvicorn completely:
+**Web App:** https://bazaarmind.vercel.app/
 
-    Ctrl+C
-    source .venv/bin/activate
-    uvicorn server:app --reload
+**Repository:** https://github.com/Osheen06/BazaarMind
 
-Then:
+> The current deployment is a working prototype. Some market information shown in demo mode is synthetic/illustrative and is explicitly separated from real pilot data.
 
-    curl -sS http://127.0.0.1:8000/api/markets/discovery/status
+---
 
-Expected:
+## 💡 The Idea
 
-    {"configured":true,"provider":"GOOGLE_PLACES"}
+### The problem
 
-Then:
+A local market contains information everywhere.
 
-    curl -sS "http://127.0.0.1:8000/api/markets/discover-nearby?lat=28.5687&lng=77.2094&radiusKm=10"
+A shopper knows what they need.
 
-If Google returns an error after this, the FastAPI wiring is working and the remaining issue is Google Cloud API/billing/restriction configuration.
+A vendor knows what arrived.
 
-## Security
+Another vendor knows what is running low.
 
-The API credentials previously pasted into chat should be rotated before production.
-Do not commit `backend/.env`.
+Someone knows today's observed price.
+
+But these observations are disconnected.
+
+The market has information, but it does not have a shared memory of that information.
+
+### The BazaarMind approach
+
+BazaarMind creates an intelligence layer over the existing market:
+
+```text
+Shopper / Vendor
+       ↓
+Natural conversation
+       ↓
+Google Gemini
+       ↓
+Structured market signal
+       ↓
+Signal storage
+       ↓
+Market intelligence
+       ↓
+Market Pulse
