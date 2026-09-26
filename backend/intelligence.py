@@ -172,8 +172,8 @@ def build_product_pulse(product: str, signals: List[Dict[str, Any]]) -> Optional
             "dataSource": s.get("dataSource", "DEMO"),
             "vendorName": s.get("vendorName") if src == "VENDOR" else None,
             "stallName": s.get("stallName") if src == "VENDOR" else None,
-            "lat": s.get("lat") if src == "VENDOR" else None,
-            "lng": s.get("lng") if src == "VENDOR" else None,
+            "lat": (s.get("lat") if s.get("lat") is not None else 28.5687) if src == "VENDOR" else None,
+            "lng": (s.get("lng") if s.get("lng") is not None else 77.2094) if src == "VENDOR" else None,
         })
 
     return {

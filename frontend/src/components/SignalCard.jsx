@@ -97,7 +97,7 @@ export default function SignalCard({ p, index = 0, onViewEvidence }) {
           className="w-full mt-1 py-1.5 px-3 rounded-lg bg-white border border-[#E5DEC9] hover:bg-[#F7F4EE] hover:border-[#1E5631]/40 text-[#1E5631] font-medium text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
         >
           <Layers className="h-3.5 w-3.5" />
-          <span>View evidence signals ({p.signalCount || (p.vendorObservations + p.shopperSignals) || 0})</span>
+          <span>View evidence signals ({p.signalCount || ((p.vendorObservations || 0) + (p.shopperSignals || 0)) || 0})</span>
           <ArrowRight className="h-3 w-3 opacity-60" />
         </button>
       </div>
