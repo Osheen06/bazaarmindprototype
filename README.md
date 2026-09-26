@@ -18,7 +18,7 @@ BazaarMind uses **Google Gemini** to interpret these natural conversations and c
 
 ## 🚀 Live Prototype
 
-**Web App:** https://bazaarmind.vercel.app/
+**Web App:** https://bazaarmind-nine.vercel.app/
 
 
 > The current deployment is a working prototype. Some market information shown in demo mode is synthetic/illustrative and is explicitly separated from real pilot data.
