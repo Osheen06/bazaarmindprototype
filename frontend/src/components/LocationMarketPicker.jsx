@@ -195,76 +195,50 @@ export default function LocationMarketPicker() {
               </div>
 
               <div className="space-y-2 max-h-48 overflow-auto pr-1">
-                {displayedMarkets.map((market) => {
-                  const navUrl =
-                    market.googleMapsUri ||
-                    (market.lat && market.lng
-                      ? `https://www.google.com/maps/dir/?api=1&destination=${market.lat},${market.lng}`
-                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(market.name)}`);
-
-                  return (
-                    <div
-                      key={market.id}
-                      className={`rounded-xl border transition-colors ${
-                        market.id === marketId
-                          ? "border-[#B7CDBD] bg-[#F3F8F4]"
-                          : "border-[#EDE6D7] bg-white"
-                      }`}
-                    >
-                      <button
-                        onClick={() => selectMarket(market)}
-                        className="w-full text-left px-3 pt-3 pb-2"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-semibold text-[#1E2022] truncate">
-                                {market.name}
-                              </span>
-                              {market.id === marketId && (
-                                <Check className="h-4 w-4 text-[#1E5631]" />
-                              )}
-                            </div>
-
-                            <div className="text-[11px] text-[#8A8A82] mt-0.5">
-                              {market.distanceKm != null
-                                ? formatDistance(market.distanceKm)
-                                : market.area}
-                            </div>
-                          </div>
-
-                          <span
-                            className={`shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full ${
-                              market.intelligenceAvailable
-                                ? "bg-[#E8F3EB] text-[#1E5631]"
-                                : "bg-[#F4F0E7] text-[#8A806E]"
-                            }`}
-                          >
-                            {market.intelligenceAvailable
-                              ? "Intelligence"
-                              : market.provider === "GOOGLE_PLACES"
-                                ? "Real market · discovery"
-                                : "Discovery only"}
+                {displayedMarkets.map((market) => (
+                  <button
+                    key={market.id}
+                    onClick={() => selectMarket(market)}
+                    className={`w-full text-left rounded-xl border px-3 py-3 transition-colors ${
+                      market.id === marketId
+                        ? "border-[#B7CDBD] bg-[#F3F8F4]"
+                        : "border-[#EDE6D7] bg-white hover:bg-[#F7F4EE]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-semibold text-[#1E2022] truncate">
+                            {market.name}
                           </span>
+                          {market.id === marketId && (
+                            <Check className="h-4 w-4 text-[#1E5631]" />
+                          )}
                         </div>
-                      </button>
 
-                      {/* Navigate to Market button */}
-                      <a
-                        href={navUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center justify-center gap-1.5 mx-3 mb-2.5 rounded-lg bg-[#F0F7F2] hover:bg-[#E2F0E6] text-[#1E5631] text-[10px] font-semibold py-1.5 transition-colors border border-[#D3E7D8]"
+                        <div className="text-[11px] text-[#8A8A82] mt-0.5">
+                          {market.distanceKm != null
+                            ? formatDistance(market.distanceKm)
+                            : market.area}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full ${
+                          market.intelligenceAvailable
+                            ? "bg-[#E8F3EB] text-[#1E5631]"
+                            : "bg-[#F4F0E7] text-[#8A806E]"
+                        }`}
                       >
-                        <Navigation className="h-3 w-3" />
-                        Navigate to Market
-                        <ExternalLink className="h-2.5 w-2.5 opacity-50" />
-                      </a>
+                        {market.intelligenceAvailable
+                          ? "Intelligence"
+                          : market.provider === "GOOGLE_PLACES"
+                            ? "Real market · discovery"
+                            : "Discovery only"}
+                      </span>
                     </div>
-                  );
-                })}
-
+                  </button>
+                ))}
 
                 {!displayedMarkets.length && (
                   <div className="text-sm text-[#8A8A82] py-3">

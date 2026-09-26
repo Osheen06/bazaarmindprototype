@@ -226,39 +226,19 @@ export function AppProvider({ children }) {
     setLocationStatus("locating");
     setLocationError("");
 
-    // Delhi NCR reference coordinates used as fallback when browser GPS is unavailable
-    const DELHI_NCR_REF = { lat: 28.5687, lng: 77.2094 };
-
-    let nextCoords = null;
-
     try {
       // Vendor activation already has a verified browser position. Reuse it
       // instead of asking CoreLocation for a second fix, which can fail with
       // transient kCLErrorLocationUnknown on macOS even when the first fix
       // succeeded.
       const position = suppliedPosition || (await getLocationWithRetry());
-      nextCoords = {
+      const nextCoords = {
         lat: position.coords.latitude,
         lng: position.coords.longitude,
         accuracyMeters: position.coords.accuracy,
         timestamp: position.timestamp,
       };
       setCoords(nextCoords);
-    } catch (geoError) {
-      // Geolocation denied or unavailable — silently fall back to Delhi NCR
-      // so the market list still appears instead of blocking the user.
-      const code = geoError?.code;
-      if (code === 1) {
-        // Permission denied — tell the user but still show markets
-        setLocationError(
-          "Location permission denied. Showing Delhi NCR markets. Allow location access and try again for personalised results."
-        );
-      }
-      nextCoords = { ...DELHI_NCR_REF, accuracyMeters: null, timestamp: Date.now() };
-      // Do NOT return — continue with fallback coords
-    }
-
-    try {
 
       const [registeredResult, discoveryResult] = await Promise.allSettled([
         getMarketsNearby(nextCoords.lat, nextCoords.lng, dataSource, 25),
@@ -344,23 +324,27 @@ export function AppProvider({ children }) {
 
       return result;
     } catch (error) {
-      // Backend / network error while fetching market data
-      const message =
-        error?.response?.data?.detail ||
-        error?.message ||
-        "Could not load nearby market data.";
-      setLocationStatus("error");
-      setLocationError((prev) => prev || message);
+      const code = error?.code;
+      let message = "We couldn't determine your location.";
 
-      // Still return DEFAULT_MARKETS as a fallback so the UI isn't blocked
-      const fallbackMarkets = DEFAULT_MARKETS;
-      setNearbyMarkets(fallbackMarkets);
-      return {
-        ok: false,
-        markets: fallbackMarkets,
-        recommendedMarketId: "demo-ina",
-        recommendedMarket: DEFAULT_MARKETS[0],
-      };
+      if (code === 1) {
+        message =
+          "Location permission was denied. Allow location access for BazaarMind and try again.";
+      } else if (code === 2) {
+        message =
+          "Your device could not determine its location. Turn on Location Services and Wi-Fi, then try again.";
+      } else if (code === 3) {
+        message =
+          "Location lookup timed out. Try again outdoors or on a phone with Location Services enabled.";
+      } else if (error?.response?.data?.detail) {
+        message = error.response.data.detail;
+      } else if (error?.message) {
+        message = error.message;
+      }
+
+      setLocationStatus("error");
+      setLocationError(message);
+      return null;
     }
   }, [dataSource, registerAndSelectMarket, setMarketId]);
 

@@ -480,46 +480,6 @@ class MarketRouteSchema(BaseModel):
     estimatedBudget: str
     estimatedWalkingTime: str
 
-def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
-    """Haversine distance in km between two GPS points."""
-    import math
-    R = 6371.0
-    dlat = math.radians(lat2 - lat1)
-    dlng = math.radians(lng2 - lng1)
-    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlng / 2) ** 2
-    return 2 * R * math.asin(math.sqrt(a))
-
-
-def _tsp_nearest_neighbor(stops: List[Dict[str, Any]], start_lat: float = 28.5687, start_lng: float = 77.2094) -> List[Dict[str, Any]]:
-    """
-    Greedy nearest-neighbor TSP: starting from market entrance, at each step visit
-    the closest unvisited stop. Minimises total walking distance within the market.
-    Preserves all stop data; renumbers step field after reordering.
-    """
-    if len(stops) <= 1:
-        return stops
-
-    remaining = list(stops)
-    ordered = []
-    cur_lat, cur_lng = start_lat, start_lng
-
-    while remaining:
-        # Find nearest unvisited stop from current position
-        nearest_idx = min(
-            range(len(remaining)),
-            key=lambda i: _haversine_km(cur_lat, cur_lng, remaining[i]["lat"], remaining[i]["lng"])
-        )
-        next_stop = remaining.pop(nearest_idx)
-        ordered.append(next_stop)
-        cur_lat, cur_lng = next_stop["lat"], next_stop["lng"]
-
-    # Renumber steps
-    for i, s in enumerate(ordered, start=1):
-        s["step"] = i
-
-    return ordered
-
-
 def _rule_based_plan_route(items: List[str], vendors: List[Dict[str, Any]], pulse_products: List[Dict[str, Any]]) -> Dict[str, Any]:
     pulse_map = {p.get("product", ""): p for p in pulse_products}
     
@@ -583,11 +543,6 @@ def _rule_based_plan_route(items: List[str], vendors: List[Dict[str, Any]], puls
                 "googleMapsUrl": f"https://www.google.com/maps/dir/?api=1&destination={v_lat},{v_lng}",
             })
 
-    # Apply nearest-neighbor TSP to minimise total walking distance
-    # Scarce items already flagged; TSP reorders to shorten the path
-    if len(stops) > 2:
-        stops = _tsp_nearest_neighbor(stops)
-
     # Multi-destination Google Maps Route
     if stops:
         coords_path = "/".join(f"{s['lat']},{s['lng']}" for s in stops)
@@ -599,13 +554,12 @@ def _rule_based_plan_route(items: List[str], vendors: List[Dict[str, Any]], puls
     walking_mins = max(2, len(stops) * 1 + 1)
 
     return {
-        "summary": f"Shortest-path {len(stops)}-stop market walking route using nearest-neighbour TSP on current INA Market supply signals.",
+        "summary": f"Optimized {len(stops)}-stop market walking route based on current INA Market supply signals.",
         "stops": stops,
         "estimatedBudget": budget_str,
         "estimatedWalkingTime": f"~{walking_mins} mins inside market",
         "googleMapsRouteUrl": route_url,
     }
-
 
 async def plan_shopper_route(
     items: List[str],
