@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, MapPin, Navigation, Radio, Store, X, Sparkles } from "lucide-react";
+import { Check, ChevronDown, MapPin, Navigation, Radio, Store, X, ExternalLink } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { getVendorsNearby } from "../lib/api";
+import { getVendorsNearby, getGoogleMapsDirectionsUrl } from "../lib/api";
 
 function formatDistance(km) {
   if (km == null) return "Distance unavailable";
@@ -34,23 +34,6 @@ export default function LocationMarketPicker() {
   const [vendorsLoading, setVendorsLoading] = useState(false);
 
   const displayedMarkets = nearbyMarkets.length ? nearbyMarkets : markets;
-
-  const demoMarket = useMemo(
-    () =>
-      displayedMarkets.find((m) => m.id === "demo-ina") ||
-      markets.find((m) => m.id === "demo-ina") || {
-        id: "demo-ina",
-        name: "INA MARKET — BAZAARMIND DEMO",
-        area: "South Delhi, Delhi NCR",
-        intelligenceAvailable: true,
-      },
-    [displayedMarkets, markets]
-  );
-
-  const otherMarkets = useMemo(
-    () => displayedMarkets.filter((m) => m.id !== "demo-ina"),
-    [displayedMarkets]
-  );
 
   const selected = useMemo(
     () => displayedMarkets.find((m) => m.id === marketId) || currentMarket,
@@ -128,29 +111,15 @@ export default function LocationMarketPicker() {
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-2 rounded-full border border-[#E5DEC9] bg-white px-3 py-2 text-left shadow-sm hover:bg-[#F7F4EE] transition-colors"
       >
-        <MapPin className="h-4 w-4 text-[#1E5631] shrink-0" />
+        <MapPin className="h-4 w-4 text-[#1E5631]" />
 
         <span className="hidden sm:block min-w-0">
-          {selected?.id === "demo-ina" ? (
-            <>
-              <span className="flex items-center gap-1 text-xs font-bold text-[#1E2022] truncate max-w-[170px]">
-                <Sparkles className="h-3 w-3 text-[#D96B27] shrink-0" />
-                INA Market (Demo)
-              </span>
-              <span className="block text-[10px] text-[#1E5631] font-semibold truncate">
-                South Delhi · Full Signals
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="block text-xs font-semibold text-[#1E2022] truncate max-w-[150px]">
-                {selected?.name || "Choose your market"}
-              </span>
-              <span className="block text-[10px] text-[#8A8A82] truncate">
-                {selected?.area || "Discovery mode"}
-              </span>
-            </>
-          )}
+          <span className="block text-xs font-semibold text-[#1E2022] truncate max-w-[150px]">
+            {selected?.name || "Choose your market"}
+          </span>
+          <span className="block text-[10px] text-[#8A8A82]">
+            {selected?.area || "Use your location"}
+          </span>
         </span>
 
         <ChevronDown
@@ -168,14 +137,15 @@ export default function LocationMarketPicker() {
             onClick={() => setOpen(false)}
           />
 
-          <div className="absolute right-0 top-full mt-2 z-50 w-[400px] max-w-[calc(100vw-24px)] rounded-2xl border border-[#E5DEC9] bg-[#FDFBF7] shadow-xl p-4">
+          <div className="absolute right-0 top-full mt-2 z-50 w-[380px] max-w-[calc(100vw-24px)] rounded-2xl border border-[#E5DEC9] bg-[#FDFBF7] shadow-xl p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="font-display text-lg font-bold text-[#1E2022]">
-                  Select Market Location
+                  Choose your market
                 </h3>
-                <p className="text-xs text-[#5C6360] mt-0.5">
-                  Choose the flagship prototype demo or discover nearby neighborhoods.
+                <p className="text-xs text-[#5C6360] mt-1">
+                  Location helps BazaarMind find participating markets and
+                  nearby stalls with available intelligence.
                 </p>
               </div>
 
@@ -187,135 +157,92 @@ export default function LocationMarketPicker() {
               </button>
             </div>
 
-            {/* Pinned Official Demo Prototype Location */}
-            <div className="mt-4 p-3 rounded-2xl bg-[#EAF4ED]/70 border-2 border-[#1E5631]/30">
-              <div className="flex items-center justify-between text-[11px] font-bold text-[#1E5631] mb-1.5">
-                <span className="flex items-center gap-1.5 uppercase tracking-wider">
-                  <Sparkles className="h-3.5 w-3.5 text-[#D96B27]" />
-                  Flagship Prototype Demo
-                </span>
-                <span className="text-[10px] bg-[#1E5631] text-white px-2 py-0.5 rounded-full font-bold">
-                  11 Signals · 4 Stalls
-                </span>
-              </div>
-
-              <button
-                onClick={() => selectMarket(demoMarket)}
-                className={`w-full text-left rounded-xl border p-3 transition-all ${
-                  marketId === "demo-ina"
-                    ? "border-[#1E5631] bg-white ring-2 ring-[#1E5631]/25"
-                    : "border-[#B7CDBD] bg-white hover:border-[#1E5631]"
+            <button
+              onClick={handleLocation}
+              disabled={locationStatus === "locating"}
+              className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#1E5631] text-white px-4 py-3 text-sm font-semibold disabled:opacity-60"
+            >
+              <Navigation
+                className={`h-4 w-4 ${
+                  locationStatus === "locating" ? "animate-pulse" : ""
                 }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-bold text-[#1E2022]">
-                        INA MARKET — BAZAARMIND DEMO
-                      </span>
-                      {marketId === "demo-ina" && (
-                        <Check className="h-4 w-4 text-[#1E5631] shrink-0" />
-                      )}
-                    </div>
-                    <div className="text-[11px] text-[#5C6360] mt-0.5">
-                      South Delhi, Delhi NCR · Green Meadows RWA
-                    </div>
-                    <div className="text-[11px] text-[#1E5631] font-medium mt-1">
-                      ✓ Tomato ₹65–₹72/kg, Potato, Onion, Coriander + live Gemini Q&A
-                    </div>
-                  </div>
+              />
+              {locationStatus === "locating"
+                ? "Finding nearby markets…"
+                : "Use my location"}
+            </button>
 
-                  {marketId !== "demo-ina" && (
-                    <span className="shrink-0 text-[11px] font-bold bg-[#1E5631] text-white px-2.5 py-1 rounded-full">
-                      Select Demo
-                    </span>
-                  )}
-                </div>
-              </button>
-            </div>
-
-            {/* Geolocation discovery */}
-            <div className="mt-4 pt-3 border-t border-[#EDE6D7]">
-              <div className="text-[10px] uppercase tracking-wider font-semibold text-[#8A8A82] mb-1.5">
-                Device Location Discovery
+            {locationStatus === "error" && locationError && (
+              <div className="mt-3 rounded-xl border border-[#F0D7C7] bg-[#FFF5EF] px-3 py-2 text-xs text-[#9B4D24]">
+                {locationError}
               </div>
-              <button
-                onClick={handleLocation}
-                disabled={locationStatus === "locating"}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-[#E5DEC9] text-[#1E2022] hover:bg-[#F7F4EE] px-4 py-2.5 text-xs font-semibold disabled:opacity-60 transition-colors"
-              >
-                <Navigation
-                  className={`h-3.5 w-3.5 ${
-                    locationStatus === "locating" ? "animate-pulse text-[#1E5631]" : "text-[#1E5631]"
-                  }`}
-                />
-                {locationStatus === "locating"
-                  ? "Finding nearby markets…"
-                  : "Find markets near my device"}
-              </button>
+            )}
 
-              {locationStatus === "error" && locationError && (
-                <div className="mt-2 rounded-xl border border-[#F0D7C7] bg-[#FFF5EF] px-3 py-1.5 text-xs text-[#9B4D24]">
-                  {locationError}
-                </div>
-              )}
-
-              {locationStatus === "success" && coords && (
-                <div className="mt-2 rounded-xl bg-[#EAF4ED] border border-[#D3E7D8] px-3 py-1.5 text-xs text-[#1E5631]">
-                  Location found.
-                  {locationProvider ? ` Source: ${locationProvider}.` : ""}
-                </div>
-              )}
-            </div>
-
-            {/* Other markets */}
-            <div className="mt-4 pt-3 border-t border-[#EDE6D7]">
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-wider font-semibold text-[#8A8A82] mb-1">
-                <span>Other Markets (Discovery Mode)</span>
-                <span className="text-[9px] text-[#B4571E] font-medium">Awaiting local signals</span>
+            {locationStatus === "success" && coords && (
+              <div className="mt-3 rounded-xl bg-[#EAF4ED] border border-[#D3E7D8] px-3 py-2 text-xs text-[#1E5631]">
+                Location found. BazaarMind is using it to find nearby market context.
+                {locationProvider ? ` Source: ${locationProvider}.` : ""}
               </div>
-              <div className="text-[11px] text-[#77766F] mb-2 leading-tight">
-                Signals appear only when local vendors contribute. Demonstrates real-world market discovery without faking unverified prices.
+            )}
+
+            <div className="mt-5">
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-[#8A8A82] mb-2">
+                Nearby markets
+              </div>
+              <div className="text-[11px] text-[#77766F] mb-2">
+                Real nearby places are discovery context. BazaarMind prices and
+                availability appear only when participating vendors report them.
               </div>
 
-              <div className="space-y-1.5 max-h-36 overflow-auto pr-1">
-                {otherMarkets.map((market) => (
+              <div className="space-y-2 max-h-48 overflow-auto pr-1">
+                {displayedMarkets.map((market) => (
                   <button
                     key={market.id}
                     onClick={() => selectMarket(market)}
-                    className={`w-full text-left rounded-xl border px-3 py-2 transition-colors ${
+                    className={`w-full text-left rounded-xl border px-3 py-3 transition-colors ${
                       market.id === marketId
                         ? "border-[#B7CDBD] bg-[#F3F8F4]"
                         : "border-[#EDE6D7] bg-white hover:bg-[#F7F4EE]"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-[#1E2022] truncate">
+                          <span className="text-sm font-semibold text-[#1E2022] truncate">
                             {market.name}
                           </span>
                           {market.id === marketId && (
-                            <Check className="h-3.5 w-3.5 text-[#1E5631]" />
+                            <Check className="h-4 w-4 text-[#1E5631]" />
                           )}
                         </div>
-                        <div className="text-[10px] text-[#8A8A82]">
+
+                        <div className="text-[11px] text-[#8A8A82] mt-0.5">
                           {market.distanceKm != null
                             ? formatDistance(market.distanceKm)
                             : market.area}
                         </div>
                       </div>
 
-                      <span className="shrink-0 text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[#F4F0E7] text-[#8A806E]">
-                        Discovery only
+                      <span
+                        className={`shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full ${
+                          market.intelligenceAvailable
+                            ? "bg-[#E8F3EB] text-[#1E5631]"
+                            : "bg-[#F4F0E7] text-[#8A806E]"
+                        }`}
+                      >
+                        {market.intelligenceAvailable
+                          ? "Intelligence"
+                          : market.provider === "GOOGLE_PLACES"
+                            ? "Real market · discovery"
+                            : "Discovery only"}
                       </span>
                     </div>
                   </button>
                 ))}
 
-                {!otherMarkets.length && (
-                  <div className="text-xs text-[#8A8A82] py-2 text-center">
-                    No additional markets found yet.
+                {!displayedMarkets.length && (
+                  <div className="text-sm text-[#8A8A82] py-3">
+                    No markets are available yet.
                   </div>
                 )}
               </div>
@@ -390,6 +317,26 @@ export default function LocationMarketPicker() {
                         Location is active; no current product price signal.
                       </div>
                     )}
+
+                    <a
+                      href={
+                        vendor.googleMapsUrl ||
+                        getGoogleMapsDirectionsUrl({
+                          lat: vendor.lat || 28.56885,
+                          lng: vendor.lng || 77.20925,
+                          stallName: vendor.stallName || vendor.vendorName,
+                          marketName: currentMarket?.name || "INA Market",
+                          area: "Delhi",
+                        })
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2.5 inline-flex items-center justify-center gap-1.5 w-full rounded-xl bg-[#EAF4ED] hover:bg-[#D8ECD8] text-[#1E5631] text-[11px] font-semibold py-1.5 transition-colors"
+                    >
+                      <Navigation className="h-3 w-3" />
+                      Directions on Google Maps
+                      <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                    </a>
                   </div>
                 ))}
               </div>

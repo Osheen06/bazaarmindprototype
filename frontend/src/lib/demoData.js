@@ -362,6 +362,9 @@ export const DEFAULT_VENDORS = [
     vendorName: "Ramesh Sabzi Wala",
     stallName: "Stall 3 · Fresh Greens",
     distanceKm: 0.12,
+    lat: 28.56885,
+    lng: 77.20925,
+    googleMapsUrl: "https://www.google.com/maps/dir/?api=1&destination=28.56885,77.20925",
     offers: [
       { product: "Tomatoes", reportedPrice: 70, priceUnit: "kg" },
       { product: "Potatoes", reportedPrice: 25, priceUnit: "kg" },
@@ -373,6 +376,9 @@ export const DEFAULT_VENDORS = [
     vendorName: "Sharma Fruits",
     stallName: "Stall 7 · Fruit Row",
     distanceKm: 0.24,
+    lat: 28.56895,
+    lng: 77.20950,
+    googleMapsUrl: "https://www.google.com/maps/dir/?api=1&destination=28.56895,77.20950",
     offers: [
       { product: "Banana", reportedPrice: 58, priceUnit: "dozen" },
       { product: "Apple", reportedPrice: 150, priceUnit: "kg" },
@@ -383,9 +389,27 @@ export const DEFAULT_VENDORS = [
     vendorName: "Green Basket",
     stallName: "Stall 11 · Center Lane",
     distanceKm: 0.35,
+    lat: 28.56860,
+    lng: 77.20960,
+    googleMapsUrl: "https://www.google.com/maps/dir/?api=1&destination=28.56860,77.20960",
     offers: [
       { product: "Onions", reportedPrice: 32, priceUnit: "kg" },
       { product: "Chilli", reportedPrice: 90, priceUnit: "kg" },
+    ],
+  },
+  {
+    vendorId: "v4",
+    vendorName: "Fresh Corner",
+    stallName: "Stall 14 · Main Gate",
+    distanceKm: 0.18,
+    lat: 28.56850,
+    lng: 77.20915,
+    googleMapsUrl: "https://www.google.com/maps/dir/?api=1&destination=28.56850,77.20915",
+    offers: [
+      { product: "Spinach", reportedPrice: 28, priceUnit: "bunch" },
+      { product: "Ginger", reportedPrice: 130, priceUnit: "kg" },
+      { product: "Carrots", reportedPrice: 38, priceUnit: "kg" },
+      { product: "Lemon", reportedPrice: 9, priceUnit: "piece" },
     ],
   },
 ];

@@ -16,12 +16,12 @@ import VendorLocationCard from "../components/VendorLocationCard";
 const EXAMPLES = [
   "Aaj tamatar thoda kam aaya hai aur rate 70 rupaye hai",
   "Aloo ka stock pura hai, 25 rupaye rate",
-  "आज धनिया बहुत कम आया है और रेट 30 रुपये है",
+  "आज धनिया बहुत कम आया है मंडी से",
   "Onions are plenty today at 35 per kg",
 ];
 
 export default function Vendor() {
-  const { marketId, refreshPulse, dataSource, participant, setMarketId } = useApp();
+  const { marketId, refreshPulse, dataSource, participant } = useApp();
   const [vendorLocation, setVendorLocation] = useState(null);
   const [mode, setMode] = useState("voice");
   const [text, setText] = useState("");
@@ -203,63 +203,19 @@ export default function Vendor() {
 
   return (
     <div>
-      {/* Switch to Demo Market callout if viewing another market */}
-      {marketId !== "demo-ina" && (
-        <div className="mb-4 rounded-2xl bg-[#EAF4ED] border border-[#B7CDBD] p-3.5 flex items-center justify-between gap-3 text-xs">
-          <div className="text-[#1E5631]">
-            <span className="font-bold">You are in Discovery Mode for another market.</span> Switch to the flagship prototype demo to test with live verified signals and stall reports.
-          </div>
-          <button
-            onClick={() => setMarketId("demo-ina")}
-            className="shrink-0 rounded-full bg-[#1E5631] text-white px-3.5 py-1.5 font-bold hover:bg-[#194727] transition-colors"
-          >
-            Switch to INA Demo
-          </button>
-        </div>
-      )}
-
       {/* Vendor Value Proposition Banner */}
       <div className="rounded-3xl bg-[#1E5631] text-[#FDFBF7] p-6 md:p-8 shadow-md relative overflow-hidden">
-        <div className="max-w-3xl relative z-10">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-[#F2C88C]">
-              Vendor Voice Intelligence · 100% Hindi & Hinglish
-            </span>
-            <span className="text-[10px] font-bold bg-white/15 text-white px-2.5 py-0.5 rounded-full">
-              Zero English Needed · Zero Form-Filling
-            </span>
-          </div>
-
-          <h2 className="font-display text-xl sm:text-2xl font-bold text-[#FDFBF7] leading-snug">
-            आप जो देखते हैं, बोलकर बताइए।<br />
+        <div className="max-w-2xl relative z-10">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-[#F2C88C]">
+            Vendor Market Intelligence
+          </span>
+          <h2 className="font-display text-xl sm:text-2xl font-bold mt-1 text-[#FDFBF7] leading-snug">
+            आप जो देखते हैं, BazaarMind को बताइए।<br />
             BazaarMind आपको पूरे बाजार की तस्वीर दिखाएगा।
           </h2>
-
           <p className="text-xs text-[#E9E4D6] mt-2 italic">
-            "Speak 10 words in Hindi about what arrived or what rate you observe. BazaarMind translates speech to data, and returns you live neighborhood demand & competitor price signals."
+            "Tell BazaarMind what you see. BazaarMind shows you what the market is seeing."
           </p>
-
-          {/* 3-Step Vendor Flow Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-4 pt-4 border-t border-white/15 text-left">
-            <div className="bg-black/20 backdrop-blur-xs rounded-xl p-2.5">
-              <div className="text-[11px] font-bold text-[#F2C88C]">१. सिर्फ बोलिए (Speak)</div>
-              <div className="text-[11px] text-white/90 mt-0.5 leading-snug">
-                माइक दबाएं और कहें: "आज टमाटर 70 का है, थोड़ा कम आया।"
-              </div>
-            </div>
-            <div className="bg-black/20 backdrop-blur-xs rounded-xl p-2.5">
-              <div className="text-[11px] font-bold text-[#F2C88C]">२. पुष्टि करें (Confirm)</div>
-              <div className="text-[11px] text-white/90 mt-0.5 leading-snug">
-                Gemini हिंदी में समझाता है — सिर्फ "✓ सही है" दबाएं।
-              </div>
-            </div>
-            <div className="bg-black/20 backdrop-blur-xs rounded-xl p-2.5">
-              <div className="text-[11px] font-bold text-[#F2C88C]">३. फायदा (Your Benefit)</div>
-              <div className="text-[11px] text-white/90 mt-0.5 leading-snug">
-                देखें खरीदार आज क्या ढूंढ रहे हैं और अन्य दुकानों में क्या रेट है।
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -365,6 +321,32 @@ export default function Vendor() {
                     Gemini interprets visible produce and fullness directly.
                   </div>
                 </button>
+
+                <div className="mt-2.5 flex items-center justify-center gap-2 flex-wrap">
+                  <span className="text-[11px] text-[#8A8A82]">Demo Crate Signals:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sample = "आज टमाटर की क्रेट लगभग खाली है, सिर्फ 20% बचा है।";
+                      setText(sample);
+                      doInterpret(sample, null);
+                    }}
+                    className="text-[11px] font-medium text-[#1E5631] bg-white border border-[#E5DEC9] px-2.5 py-1 rounded-full hover:bg-[#EAF4ED] transition-colors"
+                  >
+                    🍅 Tomato Crate (Low Stock)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sample = "आलू की भरपूर बोरियां आई हैं, पूरा स्टॉक भरा है।";
+                      setText(sample);
+                      doInterpret(sample, null);
+                    }}
+                    className="text-[11px] font-medium text-[#1E5631] bg-white border border-[#E5DEC9] px-2.5 py-1 rounded-full hover:bg-[#EAF4ED] transition-colors"
+                  >
+                    🥔 Potato Sack (Full Stock)
+                  </button>
+                </div>
               </div>
             )}
 

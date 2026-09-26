@@ -1,18 +1,20 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, ShieldCheck, RotateCcw, X, Layers, Store, Users, Clock, AlertTriangle, ArrowRight } from "lucide-react";
-import { getMarketPulse, trackEvent, resetDemo } from "../lib/api";
+import { RefreshCw, ShieldCheck, RotateCcw, X, Layers, Store, Users, Clock, AlertTriangle, ArrowRight, Compass, Navigation, ExternalLink, MapPin } from "lucide-react";
+import { getMarketPulse, trackEvent, resetDemo, getGoogleMapsDirectionsUrl } from "../lib/api";
 import { useApp } from "../context/AppContext";
 import SignalCard from "../components/SignalCard";
 import { CardSkeleton } from "../components/Loading";
 import { SectionLabel, DemoNote } from "../components/atoms";
+import MarketRadarMap from "../components/MarketRadarMap";
 
 export default function MarketPulse() {
-  const { marketId, setMarketId, pulseVersion, refreshPulse, dataSource, currentMarket } = useApp();
+  const { marketId, setMarketId, pulseVersion, refreshPulse, dataSource } = useApp();
   const [pulse, setPulse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showRadarMap, setShowRadarMap] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -78,6 +80,19 @@ export default function MarketPulse() {
           )}
 
           <button
+            onClick={() => setShowRadarMap((v) => !v)}
+            data-testid="toggle-radar-map-button"
+            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all shadow-2xs ${
+              showRadarMap
+                ? "bg-[#1E5631] text-white"
+                : "bg-white border border-[#E5DEC9] text-[#1E5631] hover:bg-[#F7F4EE]"
+            }`}
+          >
+            <Compass className="h-3.5 w-3.5" />
+            {showRadarMap ? "Hide Stall Radar" : "🗺️ Stall Radar & Google Maps"}
+          </button>
+
+          <button
             onClick={load}
             data-testid="refresh-pulse-button"
             className="inline-flex items-center gap-1.5 rounded-full bg-[#1E5631] text-[#FDFBF7] px-3.5 py-1.5 text-xs font-semibold hover:bg-[#194727] transition-colors shadow-2xs"
@@ -87,21 +102,6 @@ export default function MarketPulse() {
         </div>
       </div>
 
-      {/* Switch to Flagship Prototype Demo callout */}
-      {marketId !== "demo-ina" && (
-        <div className="mt-3.5 rounded-2xl bg-[#EAF4ED] border border-[#B7CDBD] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="text-[#1E5631]">
-            <span className="font-bold">Viewing {currentMarket?.name || "Discovery Market"}.</span> This market is in discovery mode awaiting local vendor signals. Switch to the flagship prototype demo to test with 11 live tracked items and 4 independent stalls.
-          </div>
-          <button
-            onClick={() => setMarketId("demo-ina")}
-            className="shrink-0 rounded-full bg-[#1E5631] text-white px-4 py-2 font-bold hover:bg-[#194727] transition-colors"
-          >
-            Switch to INA Demo Market
-          </button>
-        </div>
-      )}
-
       {/* Demo Market Disclaimer Banner */}
       <div className="mt-3.5 rounded-xl bg-[#D96B27]/8 border border-[#D96B27]/20 px-4 py-2.5">
         <DemoNote className="not-italic text-[#B4571E] font-medium text-xs leading-relaxed">
@@ -110,6 +110,21 @@ export default function MarketPulse() {
             : "PILOT DATA · Grounded strictly in authentic signals contributed by onboarded local pilot participants."}
         </DemoNote>
       </div>
+
+      {/* Interactive Stall Radar & Google Maps Walking Section */}
+      <AnimatePresence>
+        {showRadarMap && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-5 overflow-hidden"
+          >
+            <MarketRadarMap marketName={market?.name || "INA MARKET — BAZAARMIND DEMO"} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Grid of Product Signal Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
@@ -261,6 +276,31 @@ function EvidenceModal({ product, onClose }) {
                   <p className="text-[11.5px] text-[#3A403D] italic bg-white/60 p-2 rounded-lg border border-[#E5DEC9]/50">
                     "{ev.rawText}"
                   </p>
+                )}
+
+                {ev.source === "VENDOR" && (
+                  <div className="pt-1.5 flex items-center justify-between border-t border-[#E5DEC9]/60">
+                    <span className="text-[10px] text-[#5C6360] font-medium flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-[#1E5631]" />
+                      {ev.stallName || "Stall 3 · INA Market"}
+                    </span>
+                    <a
+                      href={getGoogleMapsDirectionsUrl({
+                        lat: ev.lat || 28.56885,
+                        lng: ev.lng || 77.20925,
+                        stallName: ev.stallName || ev.vendorName || "Stall",
+                        marketName: "INA Market",
+                        area: "South Delhi",
+                      })}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#1E5631] bg-[#EAF4ED] hover:bg-[#D8ECD8] px-2.5 py-0.5 rounded-full transition-colors"
+                    >
+                      <Navigation className="h-2.5 w-2.5" />
+                      <span>Directions (Google Maps)</span>
+                      <ExternalLink className="h-2 w-2 opacity-60" />
+                    </a>
+                  </div>
                 )}
 
                 <div className="flex items-center justify-between text-[10px] text-[#8A8A82] pt-1">

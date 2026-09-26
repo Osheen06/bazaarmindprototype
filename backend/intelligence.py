@@ -171,6 +171,9 @@ def build_product_pulse(product: str, signals: List[Dict[str, Any]]) -> Optional
             "timeAgo": _humanize_minutes(s_mins),
             "dataSource": s.get("dataSource", "DEMO"),
             "vendorName": s.get("vendorName") if src == "VENDOR" else None,
+            "stallName": s.get("stallName") if src == "VENDOR" else None,
+            "lat": s.get("lat") if src == "VENDOR" else None,
+            "lng": s.get("lng") if src == "VENDOR" else None,
         })
 
     return {
@@ -228,6 +231,9 @@ async def compute_market_pulse(db, market_id: str, data_source: Optional[str] = 
         "source": 1,
         "vendorId": 1,
         "vendorName": 1,
+        "stallName": 1,
+        "lat": 1,
+        "lng": 1,
         "availability": 1,
         "demandLevel": 1,
         "reportedPrice": 1,

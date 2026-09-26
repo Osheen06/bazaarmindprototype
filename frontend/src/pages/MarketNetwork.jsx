@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users, Store, Sparkles, ArrowDown, ArrowUp, History, Camera, LineChart as LineIcon } from "lucide-react";
+import { Users, Store, Sparkles, ArrowDown, ArrowUp, History, Camera, LineChart as LineIcon, Navigation, ExternalLink, MapPin, Compass } from "lucide-react";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { getMarketNetwork, getSnapshots, getSnapshotHistory, getSnapshotTrends, captureSnapshot, trackEvent } from "../lib/api";
+import { getMarketNetwork, getSnapshots, getSnapshotHistory, getSnapshotTrends, captureSnapshot, trackEvent, getGoogleMapsDirectionsUrl } from "../lib/api";
 import { useApp } from "../context/AppContext";
 import { SectionLabel, Chip, DemoNote } from "../components/atoms";
+import MarketRadarMap from "../components/MarketRadarMap";
 
 export default function MarketNetwork() {
   const { marketId, dataSource } = useApp();
@@ -65,15 +66,39 @@ export default function MarketNetwork() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {(net?.vendors || []).map((v, i) => (
             <motion.div key={v.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-              className="bg-white border border-[#E5DEC9] rounded-xl px-4 py-3 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-[#1E2022]">{v.name}</div>
-                <div className="text-[11px] text-[#8A8A82]">{v.stall}</div>
+              className="bg-white border border-[#E5DEC9] rounded-xl p-3.5 flex flex-col justify-between gap-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-sm font-semibold text-[#1E2022]">{v.name}</div>
+                  <div className="text-[11px] text-[#8A8A82]">{v.stall}</div>
+                </div>
+                <Chip tone="green">{v.supplySignals} signals</Chip>
               </div>
-              <Chip tone="green">{v.supplySignals} signals</Chip>
+
+              <a
+                href={getGoogleMapsDirectionsUrl({
+                  lat: v.lat || 28.56885,
+                  lng: v.lng || 77.20925,
+                  stallName: v.stall || v.name,
+                  marketName: net?.market?.name || "INA Market",
+                  area: "South Delhi",
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#EAF4ED] hover:bg-[#D8ECD8] text-[#1E5631] text-[11px] font-semibold py-1.5 transition-colors"
+              >
+                <Navigation className="h-3 w-3" />
+                Directions (Google Maps)
+                <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+              </a>
             </motion.div>
           ))}
         </div>
+      </div>
+
+      {/* Physical Market Stall Radar & Map */}
+      <div className="mt-8">
+        <MarketRadarMap marketName={net?.market?.name || "INA MARKET — BAZAARMIND DEMO"} />
       </div>
 
       {/* Trends */}

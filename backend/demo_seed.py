@@ -29,10 +29,10 @@ EXTRA_MARKETS = [
 ]
 
 DEMO_VENDORS = [
-    {"id": "v1", "name": "Ramesh Sabzi Wala", "stall": "Stall 3"},
-    {"id": "v2", "name": "Sharma Fruits", "stall": "Stall 7"},
-    {"id": "v3", "name": "Green Basket", "stall": "Stall 11"},
-    {"id": "v4", "name": "Fresh Corner", "stall": "Stall 14"},
+    {"id": "v1", "name": "Ramesh Sabzi Wala", "stall": "Stall 3 · Fresh Greens", "lat": 28.56885, "lng": 77.20925},
+    {"id": "v2", "name": "Sharma Fruits", "stall": "Stall 7 · Fruit Row", "lat": 28.56895, "lng": 77.20950},
+    {"id": "v3", "name": "Green Basket", "stall": "Stall 11 · Center Lane", "lat": 28.56860, "lng": 77.20960},
+    {"id": "v4", "name": "Fresh Corner", "stall": "Stall 14 · Main Gate", "lat": 28.56850, "lng": 77.20915},
 ]
 
 DEMO_PRODUCTS = [
@@ -144,6 +144,9 @@ def _build_signals() -> List[Dict[str, Any]]:
                 "marketId": DEMO_MARKET["id"],
                 "vendorId": vendor["id"],
                 "vendorName": vendor["name"],
+                "stallName": vendor.get("stall"),
+                "lat": vendor.get("lat"),
+                "lng": vendor.get("lng"),
                 "product": name,
                 "signalType": "PRICE_OBSERVATION" if price_val else "AVAILABILITY",
                 "availability": avail,
@@ -256,6 +259,28 @@ def _build_snapshot_history() -> List[Dict[str, Any]]:
         })
     return docs
 
+def _build_vendor_locations() -> List[Dict[str, Any]]:
+    now = datetime.now(timezone.utc)
+    return [
+        {
+            "id": f"loc-{v['id']}",
+            "vendorId": v["id"],
+            "vendorName": v["name"],
+            "stallName": v["stall"],
+            "marketId": DEMO_MARKET["id"],
+            "lat": v["lat"],
+            "lng": v["lng"],
+            "accuracyMeters": 5.0,
+            "active": True,
+            "dataSource": "DEMO",
+            "synthetic": True,
+            "createdAt": _iso(now),
+            "updatedAt": _iso(now),
+            "expiresAt": _iso(now + timedelta(days=7)),
+        }
+        for v in DEMO_VENDORS
+    ]
+
 async def seed_if_empty(db):
     # Ensure demo market has the canonical demonstration name
     await db.markets.update_one(
@@ -273,6 +298,11 @@ async def seed_if_empty(db):
             {**v, "marketId": DEMO_MARKET["id"]}
             for v in DEMO_VENDORS
         ])
+
+    # Seed vendor locations
+    loc_count = await db.vendor_locations.count_documents({"marketId": DEMO_MARKET["id"], "dataSource": "DEMO"})
+    if loc_count == 0:
+        await db.vendor_locations.insert_many(_build_vendor_locations())
 
     demo_filter = {
         "marketId": DEMO_MARKET["id"],
@@ -311,5 +341,7 @@ async def reset_demo(db):
     await db.market_snapshots.insert_many(_build_snapshots())
     await db.snapshot_history.delete_many({"marketId": DEMO_MARKET["id"], "dataSource": "DEMO"})
     await db.snapshot_history.insert_many(_build_snapshot_history())
+    await db.vendor_locations.delete_many({"marketId": DEMO_MARKET["id"], "dataSource": "DEMO"})
+    await db.vendor_locations.insert_many(_build_vendor_locations())
     await db.markets.update_one({"id": DEMO_MARKET["id"]}, {"$set": {**DEMO_MARKET}}, upsert=True)
     return {"ok": True, "reset": True, "market": DEMO_MARKET["name"], "signals": len(new_signals)}

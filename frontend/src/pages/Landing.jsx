@@ -3,21 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Radio, Network, Store, Users, Sparkles, MessageSquare, Mic, ShieldCheck, ChevronDown } from "lucide-react";
 import { trackEvent } from "../lib/api";
-import { useApp } from "../context/AppContext";
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { setMarketId } = useApp();
   useEffect(() => { trackEvent("landing_viewed"); }, []);
 
   const scrollToHowItWorks = () => {
     document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const handleLaunchDemo = () => {
-    setMarketId("demo-ina");
-    trackEvent("cta_explore_demo");
-    navigate("/pulse");
   };
 
   return (
@@ -34,8 +26,8 @@ export default function Landing() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1E5631]/10 border border-[#1E5631]/25 px-3 py-1.5 text-xs font-bold text-[#1E5631]">
-            <Sparkles className="h-3.5 w-3.5 text-[#D96B27]" /> PROTOTYPE DEMO · INA Market
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#D96B27]/10 border border-[#D96B27]/25 px-3 py-1.5 text-xs font-semibold text-[#B4571E]">
+            <Radio className="h-3 w-3" /> DEMO MARKET · INA Market
           </span>
         </div>
       </header>
@@ -83,7 +75,7 @@ export default function Landing() {
           >
             <button
               data-testid="cta-see-pulse"
-              onClick={handleLaunchDemo}
+              onClick={() => { trackEvent("cta_explore_demo"); navigate("/pulse"); }}
               className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#1E5631] px-7 py-3.5 text-[#FDFBF7] font-semibold text-sm hover:bg-[#194727] transition-all shadow-md hover:shadow-lg"
             >
               Explore Demo Market
@@ -181,7 +173,7 @@ export default function Landing() {
             </p>
           </div>
           <button
-            onClick={handleLaunchDemo}
+            onClick={() => navigate("/pulse")}
             className="shrink-0 px-6 py-3 rounded-full bg-[#FDFBF7] text-[#1E5631] font-semibold text-sm hover:bg-white transition-colors"
           >
             Launch Market Pulse →

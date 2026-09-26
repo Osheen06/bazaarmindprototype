@@ -20,7 +20,7 @@ from google.genai import types
 logger = logging.getLogger(__name__)
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 CANONICAL_PRODUCTS = [
     "Tomatoes", "Potatoes", "Onions", "Coriander",
@@ -378,12 +378,10 @@ CRITICAL RULES:
 3. Never rank vendors as "cheapest vendor" or recommend one stall over another.
 4. Never invent real-time facts, numbers, availability, or vendors.
 5. If evidence is insufficient, explicitly say: "I don't have enough local signals yet to answer that with certainty."
-6. NEVER introduce or mention outside/unrelated markets (such as Azadpur, Ghazipur, Okhla, etc.) unless explicitly part of the active market evidence. When answering for a demo market (e.g. INA MARKET — BAZAARMIND DEMO), answer ONLY based on observations in this specific market.
-7. NEVER invent causal explanations (do NOT claim supply from wholesale mandis is constrained unless that specific fact is verified in the active market evidence). If the system only knows demand, availability, and price, answer ONLY using those facts.
-8. If the user asks an off-topic question unrelated to local market intelligence (such as cricket, scores, movies, general trivia, weather in other cities, programming), politely decline:
+6. If the user asks an off-topic question unrelated to local market intelligence (such as cricket, scores, movies, general trivia, weather in other cities, programming), politely decline:
    "BazaarMind is dedicated strictly to local neighborhood market intelligence in your selected market. I can answer questions about local produce availability, observed prices, vendor observations, and shopper demand."
-9. Reply in the user's language style: Hindi, Hinglish, or English.
-10. Keep answers concise: 2-3 short sentences grounded in the signal counts and recency.
+7. Reply in the user's language style: Hindi, Hinglish, or English.
+8. Keep answers concise: 2-4 short sentences grounded in the signal counts and recency.
 """
 
 def _rule_based_ask(question: str, market_context: str) -> str:
@@ -409,8 +407,8 @@ def _rule_based_ask(question: str, market_context: str) -> str:
             if match:
                 avail, demand, price_str, ev = match.groups()
                 return (
-                    f"Based on recent vendor observations in the INA Market demo, {canon.lower()} currently show {avail.lower()} reported availability "
-                    f"with {demand.lower()} shopper demand. Observed prices range from {price_str}, backed by {ev}. "
+                    f"Based on current market signals for {canon}: availability is reported as {avail.lower()} "
+                    f"with {demand.lower()} shopper demand. Observed price signal is {price_str}, backed by {ev}. "
                     f"These are reported observations from neighborhood stalls."
                 )
             else:
@@ -419,7 +417,7 @@ def _rule_based_ask(question: str, market_context: str) -> str:
     # General market overview
     if any(w in q_lower for w in ["what", "happening", "today", "know", "difficult", "tight", "low"]):
         return (
-            "According to today's market signals in the INA Market demo, Tomatoes and Coriander are showing tight availability with elevated shopper demand. "
+            "According to today's market signals, Tomatoes and Coriander are showing tight availability with elevated shopper demand. "
             "Potatoes and Onions have healthy supply with stable observed price ranges. "
             "All insights are backed by participating vendor and shopper observations."
         )
@@ -456,3 +454,177 @@ async def ask_bazaar(question: str, market_context: str, session_id: str = "ask"
     except Exception as exc:
         logger.warning("Gemini live ask failed (%s), using rule-based engine: %s", type(exc).__name__, exc)
         return _rule_based_ask(question, market_context)
+
+ROUTE_SYSTEM = """You are BazaarMind's Market Route Optimizer for India's neighborhood markets.
+You receive a shopper's needed produce items, currently reporting market stalls with coordinates and prices, and today's market pulse.
+Synthesize the smartest walking route through the stalls:
+1. Put scarce/tight items first so the shopper buys before stock sells out.
+2. Group nearby stalls in a logical walking path.
+3. Provide a clear 1-line tip in Hindi/Hinglish or English for each stop.
+4. Estimate total grocery budget based on observed price signals.
+"""
+
+class PlanStopSchema(BaseModel):
+    step: int
+    stallName: str
+    vendorName: str
+    product: str
+    reason: str
+    estimatedPrice: Optional[str] = None
+    lat: float
+    lng: float
+
+class MarketRouteSchema(BaseModel):
+    summary: str
+    stops: List[PlanStopSchema]
+    estimatedBudget: str
+    estimatedWalkingTime: str
+
+def _rule_based_plan_route(items: List[str], vendors: List[Dict[str, Any]], pulse_products: List[Dict[str, Any]]) -> Dict[str, Any]:
+    pulse_map = {p.get("product", ""): p for p in pulse_products}
+    
+    # Priority sorting: items with LOW / Tight availability first
+    def get_priority(item_name):
+        p = pulse_map.get(item_name, {})
+        code = p.get("availabilityCode") or ("LOW" if p.get("availability") == "Tight" else "NORMAL")
+        return 0 if code == "LOW" else 1
+
+    sorted_items = sorted(items, key=get_priority)
+    
+    stops = []
+    used_vendors = set()
+    total_low, total_high = 0, 0
+
+    for idx, item in enumerate(sorted_items, start=1):
+        # Find matching vendor
+        best_v = None
+        for v in vendors:
+            v_id = v.get("vendorId") or v.get("id")
+            for off in v.get("offers", []):
+                if off.get("product", "").lower() == item.lower():
+                    best_v = v
+                    break
+            if best_v and v_id not in used_vendors:
+                break
+        
+        if not best_v and vendors:
+            best_v = vendors[(idx - 1) % len(vendors)]
+        
+        if best_v:
+            v_id = best_v.get("vendorId") or best_v.get("id") or f"v{idx}"
+            used_vendors.add(v_id)
+            p_info = pulse_map.get(item, {})
+            price_sig = p_info.get("reportedPriceSignal") or "₹30–₹40"
+            is_tight = p_info.get("availability") == "Tight" or p_info.get("availabilityCode") == "LOW"
+            
+            p_lo = p_info.get("priceLow", 30)
+            p_hi = p_info.get("priceHigh", 50)
+            total_low += (p_lo or 30)
+            total_high += (p_hi or 50)
+            
+            reason = (
+                f"{item} supply is tight today — buy early from {best_v.get('vendorName')}."
+                if is_tight
+                else f"Good fresh stock of {item} observed at this stall."
+            )
+            
+            v_lat = float(best_v.get("lat") or (28.56885 + idx * 0.0001))
+            v_lng = float(best_v.get("lng") or (77.20925 + idx * 0.0001))
+            
+            stops.append({
+                "step": idx,
+                "stallName": best_v.get("stallName") or best_v.get("stall") or f"Stall {idx}",
+                "vendorName": best_v.get("vendorName") or best_v.get("name") or "Local Stall",
+                "product": item,
+                "reason": reason,
+                "estimatedPrice": price_sig,
+                "lat": v_lat,
+                "lng": v_lng,
+                "googleMapsUrl": f"https://www.google.com/maps/dir/?api=1&destination={v_lat},{v_lng}",
+            })
+
+    # Multi-destination Google Maps Route
+    if stops:
+        coords_path = "/".join(f"{s['lat']},{s['lng']}" for s in stops)
+        route_url = f"https://www.google.com/maps/dir/28.5687,77.2094/{coords_path}"
+    else:
+        route_url = "https://www.google.com/maps/search/?api=1&query=INA+Market+Delhi"
+
+    budget_str = f"₹{round(total_low)}–₹{round(total_high)}" if total_low else "₹150–₹220"
+    walking_mins = max(2, len(stops) * 1 + 1)
+
+    return {
+        "summary": f"Optimized {len(stops)}-stop market walking route based on current INA Market supply signals.",
+        "stops": stops,
+        "estimatedBudget": budget_str,
+        "estimatedWalkingTime": f"~{walking_mins} mins inside market",
+        "googleMapsRouteUrl": route_url,
+    }
+
+async def plan_shopper_route(
+    items: List[str],
+    market_name: str,
+    vendors: List[Dict[str, Any]],
+    pulse_products: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    if not items:
+        return {"summary": "No produce items to plan route for.", "stops": [], "estimatedBudget": "—", "estimatedWalkingTime": "0 mins", "googleMapsRouteUrl": ""}
+
+    if not is_configured():
+        return _rule_based_plan_route(items, vendors, pulse_products)
+
+    try:
+        client = _client()
+        vendor_ctx = "\n".join(
+            f"- {v.get('vendorName')} ({v.get('stallName')}, lat:{v.get('lat')}, lng:{v.get('lng')}): " +
+            ", ".join(f"{o.get('product')} (₹{o.get('reportedPrice')})" for o in v.get("offers", []))
+            for v in vendors
+        )
+        pulse_ctx = "\n".join(
+            f"- {p.get('product')}: avail={p.get('availability')}, price={p.get('reportedPriceSignal')}"
+            for p in pulse_products if p.get("product") in items
+        )
+        prompt = (
+            f"Market: {market_name}\n"
+            f"Shopper needed items: {', '.join(items)}\n\n"
+            f"Live Market Pulse:\n{pulse_ctx}\n\n"
+            f"Available Stalls with GPS:\n{vendor_ctx}\n\n"
+            f"Synthesize the optimal walking route."
+        )
+
+        response = await asyncio.to_thread(
+            client.models.generate_content,
+            model=GEMINI_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=ROUTE_SYSTEM,
+                response_mime_type="application/json",
+                response_schema=MarketRouteSchema,
+                max_output_tokens=700,
+            ),
+        )
+        parsed = getattr(response, "parsed", None)
+        if parsed is not None:
+            data = parsed.model_dump() if hasattr(parsed, "model_dump") else dict(parsed)
+        else:
+            data = _extract_json(response.text)
+
+        # Attach Google Maps links to each stop
+        stops = data.get("stops", [])
+        for s in stops:
+            v_lat = float(s.get("lat") or 28.56885)
+            v_lng = float(s.get("lng") or 77.20925)
+            s["lat"] = v_lat
+            s["lng"] = v_lng
+            s["googleMapsUrl"] = f"https://www.google.com/maps/dir/?api=1&destination={v_lat},{v_lng}"
+
+        if stops:
+            coords_path = "/".join(f"{s['lat']},{s['lng']}" for s in stops)
+            data["googleMapsRouteUrl"] = f"https://www.google.com/maps/dir/28.5687,77.2094/{coords_path}"
+        else:
+            data["googleMapsRouteUrl"] = "https://www.google.com/maps/search/?api=1&query=INA+Market+Delhi"
+
+        return data
+    except Exception as exc:
+        logger.warning("Gemini plan_shopper_route failed (%s), using rule-based engine: %s", type(exc).__name__, exc)
+        return _rule_based_plan_route(items, vendors, pulse_products)

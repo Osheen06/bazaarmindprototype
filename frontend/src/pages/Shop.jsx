@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, CheckCircle2, AlertTriangle, HelpCircle, Mic, MicOff, Check, Edit3, Sparkles } from "lucide-react";
-import { parseShoppingList, trackEvent } from "../lib/api";
+import { Send, CheckCircle2, AlertTriangle, HelpCircle, Mic, MicOff, Check, Edit3, Sparkles, Navigation, MapPin, ExternalLink, Compass, ArrowRight, Store } from "lucide-react";
+import { parseShoppingList, trackEvent, planShopperRoute, getGoogleMapsDirectionsUrl } from "../lib/api";
 import { useApp } from "../context/AppContext";
 import { TypingDots } from "../components/Loading";
 import { Chip } from "../components/atoms";
@@ -13,7 +13,7 @@ const SUGGESTIONS = [
 ];
 
 export default function Shop() {
-  const { marketId, refreshPulse, participant, currentMarket, setMarketId } = useApp();
+  const { marketId, setMarketId, currentMarket, refreshPulse, participant, dataSource } = useApp();
   const [messages, setMessages] = useState([
     {
       id: "intro",
@@ -178,20 +178,6 @@ export default function Shop() {
         </Chip>
       </div>
 
-      {marketId !== "demo-ina" && (
-        <div className="mt-2.5 rounded-xl bg-[#EAF4ED] border border-[#B7CDBD] p-2.5 flex items-center justify-between gap-3 text-xs">
-          <div className="text-[#1E5631]">
-            <span className="font-bold">Viewing {currentMarket?.name || "Discovery Market"}.</span> Switch to INA Demo Market to see live stock matching.
-          </div>
-          <button
-            onClick={() => setMarketId("demo-ina")}
-            className="shrink-0 rounded-full bg-[#1E5631] text-white px-3 py-1 font-bold hover:bg-[#194727] transition-colors"
-          >
-            Switch to INA Demo
-          </button>
-        </div>
-      )}
-
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto bm-scroll mt-3 pr-1 flex flex-col gap-3 py-2">
         <AnimatePresence initial={false}>
@@ -210,7 +196,7 @@ export default function Shop() {
               );
             }
             if (m.type === "list") {
-              return <ListResult key={m.id} data={m.data} />;
+              return <ListResult key={m.id} data={m.data} marketId={marketId} dataSource={dataSource} />;
             }
             return (
               <Bubble key={m.id} role={m.role}>
@@ -367,16 +353,35 @@ function DemandConfirmationCard({ items, rawText, language, busy, onConfirm, onE
   );
 }
 
-function ListResult({ data }) {
+function ListResult({ data, marketId = "demo-ina", dataSource = "DEMO" }) {
+  const [route, setRoute] = useState(null);
+  const [planningRoute, setPlanningRoute] = useState(false);
+
+  const handlePlanRoute = async () => {
+    if (planningRoute) return;
+    setPlanningRoute(true);
+    try {
+      const items = (data.items || []).map((i) => i.product);
+      const res = await planShopperRoute({ items, marketId, dataSource });
+      if (res && res.stops) {
+        setRoute(res);
+      }
+    } catch {
+      // Gracefully handled by client fallback
+    } finally {
+      setPlanningRoute(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="self-start max-w-[92%] w-full bg-white border border-[#E5DEC9] rounded-2xl rounded-tl-none p-4 shadow-sm"
+      className="self-start max-w-[92%] w-full bg-white border border-[#E5DEC9] rounded-2xl rounded-tl-none p-4 shadow-sm space-y-4"
       data-testid="shopping-list-result"
     >
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between pb-1 border-b border-[#F0EBDE]">
         <div className="text-xs font-semibold tracking-wide uppercase text-[#5C6360]">
           Your list vs today's market pulse
         </div>
@@ -425,12 +430,97 @@ function ListResult({ data }) {
       </div>
 
       {data.summary && (
-        <div className="mt-3 rounded-xl bg-[#D96B27]/8 border border-[#D96B27]/20 px-3 py-2 text-sm text-[#B4571E] font-medium">
+        <div className="rounded-xl bg-[#D96B27]/8 border border-[#D96B27]/20 px-3 py-2 text-sm text-[#B4571E] font-medium">
           {data.summary}
         </div>
       )}
 
-      <div className="mt-3 pt-2 border-t border-[#F0EBDE] flex items-center justify-between text-[11px] text-[#8A8A82]">
+      {/* Gemini Smart Walking Route Planner Section */}
+      <div className="rounded-2xl bg-[#FDFBF7] border border-[#E5DEC9] p-3.5 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1E5631]">
+              <Sparkles className="h-3.5 w-3.5" />
+              Gemini Market Walking Route
+            </div>
+            <p className="text-xs text-[#5C6360] mt-0.5">
+              Sequence your stall stops: scarce items first, minimum walking distance, and Google Maps directions.
+            </p>
+          </div>
+
+          <button
+            onClick={handlePlanRoute}
+            disabled={planningRoute}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#1E5631] hover:bg-[#194727] text-white text-xs font-semibold px-3.5 py-2 transition-colors shrink-0 shadow-xs disabled:opacity-50"
+          >
+            <Compass className={`h-3.5 w-3.5 ${planningRoute ? "animate-spin" : ""}`} />
+            <span>{planningRoute ? "Optimizing Route..." : route ? "Re-plan Route" : "✨ Plan Route with Gemini"}</span>
+          </button>
+        </div>
+
+        {/* Route Steps Display */}
+        {route && route.stops && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="pt-2 border-t border-[#E5DEC9] space-y-2.5"
+          >
+            <div className="flex items-center justify-between text-xs font-medium text-[#1E2022] bg-white rounded-xl p-2.5 border border-[#E5DEC9]">
+              <span className="text-[#1E5631] font-semibold">Budget: {route.estimatedBudget || "₹160–₹190"}</span>
+              <span className="text-[#5C6360]">{route.estimatedWalkingTime || "~3 mins walking"}</span>
+            </div>
+
+            <div className="space-y-2">
+              {route.stops.map((stop) => (
+                <div
+                  key={stop.step}
+                  className="rounded-xl bg-white border border-[#E5DEC9] p-2.5 text-xs space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 font-bold text-[#1E2022]">
+                      <span className="h-5 w-5 rounded-full bg-[#1E5631] text-white text-[11px] flex items-center justify-center font-mono">
+                        {stop.step}
+                      </span>
+                      {stop.stallName} · {stop.vendorName}
+                    </span>
+                    <a
+                      href={stop.googleMapsUrl || `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#1E5631] bg-[#EAF4ED] hover:bg-[#D8ECD8] px-2 py-0.5 rounded-full transition-colors"
+                    >
+                      <Navigation className="h-2.5 w-2.5" />
+                      <span>Directions</span>
+                      <ExternalLink className="h-2 w-2 opacity-60" />
+                    </a>
+                  </div>
+
+                  <div className="text-[11.5px] text-[#3A403D] pl-6">
+                    <span className="font-semibold text-[#1E5631]">{stop.product}</span>
+                    {stop.estimatedPrice ? ` (${stop.estimatedPrice})` : ""} — {stop.reason}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Master Google Maps Route Button */}
+            {route.googleMapsRouteUrl && (
+              <a
+                href={route.googleMapsRouteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-[#1E5631] hover:bg-[#194727] text-white text-xs font-semibold py-2.5 shadow-sm transition-colors"
+              >
+                <Navigation className="h-4 w-4" />
+                <span>Open Complete Walking Route in Google Maps</span>
+                <ExternalLink className="h-3 w-3 opacity-70" />
+              </a>
+            )}
+          </motion.div>
+        )}
+      </div>
+
+      <div className="pt-2 border-t border-[#F0EBDE] flex items-center justify-between text-[11px] text-[#8A8A82]">
         <span>Market Pulse updated with your signals</span>
         <span className="font-mono">Anonymous signal</span>
       </div>

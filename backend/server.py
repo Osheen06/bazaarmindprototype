@@ -141,6 +141,11 @@ class ShoppingListRequest(BaseModel):
     participantId: Optional[str] = None
     persist: bool = True
 
+class PlanRouteRequest(BaseModel):
+    items: List[str] = Field(default_factory=list)
+    marketId: str = DEFAULT_MARKET
+    dataSource: str = "DEMO"
+
 class AskRequest(BaseModel):
     question: str
     marketId: str = DEFAULT_MARKET
@@ -410,6 +415,62 @@ async def shopping_list_parse(req: ShoppingListRequest):
         "language": parsed.get("language", "ENGLISH"),
         "persisted": req.persist,
     }
+
+@api.post("/shopper/plan-route")
+async def plan_shopper_route_endpoint(req: PlanRouteRequest):
+    data_source = req.dataSource or "DEMO"
+    pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=data_source)
+    market = await db.markets.find_one({"id": req.marketId}, {"_id": 0})
+    market_name = market["name"] if market else "INA MARKET — BAZAARMIND DEMO"
+
+    now_str = now_iso()
+    locations = await db.vendor_locations.find(
+        {"marketId": req.marketId, "dataSource": data_source, "active": True, "expiresAt": {"$gt": now_str}},
+        {"_id": 0}
+    ).to_list(100)
+
+    if not locations and data_source == "DEMO" and req.marketId == "demo-ina":
+        locations = [
+            {"vendorId": "v1", "vendorName": "Ramesh Sabzi Wala", "stallName": "Stall 3 · Fresh Greens", "lat": 28.56885, "lng": 77.20925},
+            {"vendorId": "v2", "vendorName": "Sharma Fruits", "stallName": "Stall 7 · Fruit Row", "lat": 28.56895, "lng": 77.20950},
+            {"vendorId": "v3", "vendorName": "Green Basket", "stallName": "Stall 11 · Center Lane", "lat": 28.56860, "lng": 77.20960},
+            {"vendorId": "v4", "vendorName": "Fresh Corner", "stallName": "Stall 14 · Main Gate", "lat": 28.56850, "lng": 77.20915},
+        ]
+
+    vendor_list = []
+    for loc in locations:
+        signals = await db.market_signals.find(
+            {"marketId": req.marketId, "vendorId": loc["vendorId"], "source": "VENDOR", "status": "confirmed", "dataSource": data_source},
+            {"_id": 0}
+        ).sort("createdAt", -1).limit(20).to_list(20)
+        offers = []
+        seen = set()
+        for s in signals:
+            p_name = s.get("product")
+            if p_name and p_name not in seen:
+                seen.add(p_name)
+                offers.append({
+                    "product": p_name,
+                    "reportedPrice": s.get("reportedPrice"),
+                    "priceUnit": s.get("priceUnit"),
+                    "availability": s.get("availability"),
+                })
+        vendor_list.append({
+            "vendorId": loc["vendorId"],
+            "vendorName": loc.get("vendorName") or "Local Stall",
+            "stallName": loc.get("stallName") or "Stall",
+            "lat": float(loc.get("lat") or 28.5687),
+            "lng": float(loc.get("lng") or 77.2094),
+            "offers": offers,
+        })
+
+    route_plan = await gemini_service.plan_shopper_route(
+        items=req.items,
+        market_name=market_name,
+        vendors=vendor_list,
+        pulse_products=pulse.get("products", []),
+    )
+    return {"ok": True, **route_plan}
 
 # ----------------------------- Ask BazaarMind -----------------------------
 @api.post("/ask-bazaar")

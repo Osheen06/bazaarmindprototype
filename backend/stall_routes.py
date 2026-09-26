@@ -184,11 +184,19 @@ def build_router(db):
             {"_id": 0},
         ).to_list(200)
 
+        if not locations and source == "DEMO" and marketId == "demo-ina":
+            locations = [
+                {"vendorId": "v1", "vendorName": "Ramesh Sabzi Wala", "stallName": "Stall 3 · Fresh Greens", "lat": 28.56885, "lng": 77.20925},
+                {"vendorId": "v2", "vendorName": "Sharma Fruits", "stallName": "Stall 7 · Fruit Row", "lat": 28.56895, "lng": 77.20950},
+                {"vendorId": "v3", "vendorName": "Green Basket", "stallName": "Stall 11 · Center Lane", "lat": 28.56860, "lng": 77.20960},
+                {"vendorId": "v4", "vendorName": "Fresh Corner", "stallName": "Stall 14 · Main Gate", "lat": 28.56850, "lng": 77.20915},
+            ]
+
         results = []
         for loc in locations:
-            distance = _haversine_km(
-                lat, lng, float(loc["lat"]), float(loc["lng"])
-            )
+            v_lat = float(loc.get("lat") or 28.5687)
+            v_lng = float(loc.get("lng") or 77.2094)
+            distance = _haversine_km(lat, lng, v_lat, v_lng)
             if distance > radiusKm:
                 continue
 
@@ -235,9 +243,13 @@ def build_router(db):
                 "vendorName": loc.get("vendorName") or "BazaarMind Vendor",
                 "stallName": loc.get("stallName") or loc.get("vendorName") or "Vendor stall",
                 "marketId": marketId,
+                "lat": v_lat,
+                "lng": v_lng,
+                "googleMapsUrl": f"https://www.google.com/maps/dir/?api=1&destination={v_lat},{v_lng}",
                 "distanceKm": round(distance, 2),
+                "distanceMeters": round(distance * 1000),
                 "locationActive": True,
-                "accuracyMeters": loc.get("accuracyMeters"),
+                "accuracyMeters": loc.get("accuracyMeters", 5.0),
                 "updatedAt": loc.get("updatedAt"),
                 "offers": offers,
             })
