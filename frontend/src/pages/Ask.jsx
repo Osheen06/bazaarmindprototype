@@ -10,13 +10,14 @@ import { Chip } from "../components/atoms";
 const QUESTIONS = [
   "What's happening with tomatoes?",
   "What is running low in the market?",
+  "टमाटर का क्या भाव चल रहा है आज?",
   "What is the observed price range for onions?",
   "Do we have enough signals to say tomatoes are scarce?",
   "What are shoppers asking for today?",
 ];
 
 export default function Ask() {
-  const { marketId, dataSource, currentMarket } = useApp();
+  const { marketId, dataSource, currentMarket, setMarketId } = useApp();
 
   const [messages, setMessages] = useState([
     {
@@ -117,19 +118,34 @@ export default function Ask() {
 
       {/* Market Mode Banner */}
       <div className="mt-2.5 rounded-xl bg-[#F7F4EE] border border-[#E5DEC9] px-3.5 py-2">
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-[#1E2022]">Grounding Source:</span>
             <span className="text-[#5C6360]">
-              {dataSource === "PILOT" ? "Live pilot market signals" : "Demo market signals (illustrative)"}
+              {marketId === "demo-ina"
+                ? "INA Market Demo Signals (11 items · 4 stalls)"
+                : dataSource === "PILOT"
+                ? "Live pilot market signals"
+                : `${currentMarket?.name || "Selected market"} (discovery signals only)`}
             </span>
           </div>
-          <Link
-            to="/pulse"
-            className="text-[11px] font-medium text-[#1E5631] hover:underline flex items-center gap-1"
-          >
-            View Market Pulse <ArrowRight className="h-3 w-3" />
-          </Link>
+          <div className="flex items-center gap-3">
+            {marketId !== "demo-ina" && (
+              <button
+                onClick={() => setMarketId("demo-ina")}
+                className="text-[11px] font-bold text-[#1E5631] bg-[#EAF4ED] px-2.5 py-1 rounded-full hover:bg-[#D8ECD8] transition-colors flex items-center gap-1"
+              >
+                <Sparkles className="h-3 w-3 text-[#D96B27]" />
+                Switch to INA Demo
+              </button>
+            )}
+            <Link
+              to="/pulse"
+              className="text-[11px] font-medium text-[#1E5631] hover:underline flex items-center gap-1"
+            >
+              View Market Pulse <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
         </div>
       </div>
 

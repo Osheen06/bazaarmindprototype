@@ -8,7 +8,7 @@ import { CardSkeleton } from "../components/Loading";
 import { SectionLabel, DemoNote } from "../components/atoms";
 
 export default function MarketPulse() {
-  const { marketId, setMarketId, pulseVersion, refreshPulse, dataSource } = useApp();
+  const { marketId, setMarketId, pulseVersion, refreshPulse, dataSource, currentMarket } = useApp();
   const [pulse, setPulse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
@@ -86,6 +86,21 @@ export default function MarketPulse() {
           </button>
         </div>
       </div>
+
+      {/* Switch to Flagship Prototype Demo callout */}
+      {marketId !== "demo-ina" && (
+        <div className="mt-3.5 rounded-2xl bg-[#EAF4ED] border border-[#B7CDBD] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="text-[#1E5631]">
+            <span className="font-bold">Viewing {currentMarket?.name || "Discovery Market"}.</span> This market is in discovery mode awaiting local vendor signals. Switch to the flagship prototype demo to test with 11 live tracked items and 4 independent stalls.
+          </div>
+          <button
+            onClick={() => setMarketId("demo-ina")}
+            className="shrink-0 rounded-full bg-[#1E5631] text-white px-4 py-2 font-bold hover:bg-[#194727] transition-colors"
+          >
+            Switch to INA Demo Market
+          </button>
+        </div>
+      )}
 
       {/* Demo Market Disclaimer Banner */}
       <div className="mt-3.5 rounded-xl bg-[#D96B27]/8 border border-[#D96B27]/20 px-4 py-2.5">

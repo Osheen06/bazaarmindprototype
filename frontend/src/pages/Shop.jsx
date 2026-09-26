@@ -13,7 +13,7 @@ const SUGGESTIONS = [
 ];
 
 export default function Shop() {
-  const { marketId, refreshPulse, participant } = useApp();
+  const { marketId, refreshPulse, participant, currentMarket, setMarketId } = useApp();
   const [messages, setMessages] = useState([
     {
       id: "intro",
@@ -177,6 +177,20 @@ export default function Shop() {
           </span>
         </Chip>
       </div>
+
+      {marketId !== "demo-ina" && (
+        <div className="mt-2.5 rounded-xl bg-[#EAF4ED] border border-[#B7CDBD] p-2.5 flex items-center justify-between gap-3 text-xs">
+          <div className="text-[#1E5631]">
+            <span className="font-bold">Viewing {currentMarket?.name || "Discovery Market"}.</span> Switch to INA Demo Market to see live stock matching.
+          </div>
+          <button
+            onClick={() => setMarketId("demo-ina")}
+            className="shrink-0 rounded-full bg-[#1E5631] text-white px-3 py-1 font-bold hover:bg-[#194727] transition-colors"
+          >
+            Switch to INA Demo
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto bm-scroll mt-3 pr-1 flex flex-col gap-3 py-2">

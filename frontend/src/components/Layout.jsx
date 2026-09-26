@@ -162,6 +162,8 @@ export default function Layout({ children }) {
 
   const {
     currentMarket,
+    marketId,
+    setMarketId,
   } = useApp();
 
   return (
@@ -205,20 +207,35 @@ export default function Layout({ children }) {
           {/* Current market in sidebar */}
 
           <div className="mt-auto pt-4 border-t border-[#E5DEC9]">
-            <div className="text-[11px] text-[#5C6360] mb-2">
-              Current market
+            <div className="flex items-center justify-between text-[11px] text-[#5C6360] mb-2">
+              <span>Current market</span>
+              {marketId === "demo-ina" && (
+                <span className="text-[10px] font-bold text-[#1E5631] bg-[#1E5631]/10 px-1.5 py-0.5 rounded">
+                  DEMO PROTOTYPE
+                </span>
+              )}
             </div>
 
             <div className="rounded-xl bg-white border border-[#E5DEC9] px-3 py-2.5">
-              <div className="font-semibold text-sm text-[#1E2022]">
+              <div className="font-semibold text-sm text-[#1E2022] truncate">
                 {currentMarket?.name ||
                   "INA MARKET — BAZAARMIND DEMO"}
               </div>
 
-              <div className="text-[11px] text-[#8A8A82]">
+              <div className="text-[11px] text-[#8A8A82] truncate">
                 {currentMarket?.area ||
                   "Delhi NCR"}
               </div>
+
+              {marketId !== "demo-ina" && (
+                <button
+                  onClick={() => setMarketId("demo-ina")}
+                  className="mt-2 w-full text-center text-xs font-semibold text-[#1E5631] bg-[#EAF4ED] hover:bg-[#D8ECD8] py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1"
+                >
+                  <Sparkles className="h-3 w-3 text-[#D96B27]" />
+                  Switch to Demo Market
+                </button>
+              )}
             </div>
           </div>
         </aside>
@@ -245,9 +262,16 @@ export default function Layout({ children }) {
               {/* Desktop market title */}
 
               <div className="hidden md:block min-w-0">
-                <div className="font-display font-semibold text-[#1E2022] truncate">
-                  {currentMarket?.name ||
-                    "INA MARKET — BAZAARMIND DEMO"}
+                <div className="flex items-center gap-2">
+                  <div className="font-display font-semibold text-[#1E2022] truncate">
+                    {currentMarket?.name ||
+                      "INA MARKET — BAZAARMIND DEMO"}
+                  </div>
+                  {marketId === "demo-ina" && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#1E5631]/10 text-[#1E5631] px-2 py-0.5 rounded-full">
+                      Prototype Demo
+                    </span>
+                  )}
                 </div>
 
                 <div className="text-[11px] text-[#5C6360] truncate">
@@ -259,6 +283,17 @@ export default function Layout({ children }) {
               {/* Right controls */}
 
               <div className="flex items-center gap-2 ml-auto">
+                {marketId !== "demo-ina" && (
+                  <button
+                    onClick={() => setMarketId("demo-ina")}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#1E5631] text-white px-3 py-1.5 text-xs font-semibold hover:bg-[#194727] transition-all shadow-xs"
+                    title="Switch to the full prototype demo location with live AI signals"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-[#F2C88C]" />
+                    <span className="hidden sm:inline">Switch to Demo Market</span>
+                    <span className="sm:hidden">Demo</span>
+                  </button>
+                )}
                 <LocationMarketPicker />
                 <DemoModeBadge />
               </div>
