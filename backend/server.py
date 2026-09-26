@@ -19,7 +19,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from utils import haversine_km
 
 ROOT_DIR = Path(__file__).resolve().parent
