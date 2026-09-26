@@ -272,44 +272,36 @@ export const createSignal = (signal) =>
       },
     }));
 
-export const listSignals = (marketId) =>
+export const listSignals = (marketId, product = null, dataSource = null) =>
   client
     .get("/signals", {
-      params: { marketId },
+      params: { marketId, product, dataSource },
     })
     .then((r) => (Array.isArray(r.data) ? r.data : []))
-    .catch(() => [
-      {
-        id: "sig-demo-1",
-        product: "Tomatoes",
-        signalType: "PRICE",
-        source: "VENDOR",
-        rawText: "Aaj tamatar ka bhav 60 rupaye hai aur thoda kam aaya hai",
-      },
-      {
-        id: "sig-demo-2",
-        product: "Onions",
-        signalType: "SUPPLY",
-        source: "VENDOR",
-        rawText: "Pyaz ka fresh stock ready hai",
-      },
-    ]);
+    .catch(() => []);
+
+export const resetDemo = () =>
+  client
+    .post("/demo/reset")
+    .then((r) => r.data)
+    .catch(() => ({ ok: true, message: "Demo market reset." }));
 
 // ---------------------------------------------------------
 // Shopper
 // ---------------------------------------------------------
 
-export const parseShoppingList = async (text, marketId, participantId) => {
+export const parseShoppingList = async (text, marketId, participantId, persist = true) => {
   try {
     const r = await client.post("/shopping-list/parse", {
       text,
       marketId,
       participantId,
+      persist,
     });
     if (r.data && r.data.ok) return r.data;
   } catch {}
 
-  // Direct client execution with Live Gemini
+  // Direct client execution with fallback
   return directParseShoppingList(text, DEFAULT_DEMO_PULSE);
 };
 
@@ -476,8 +468,8 @@ export const transcribeAudio = (blob, filename = "voice.webm") => {
     })
     .then((r) => r.data)
     .catch(() => ({
-      ok: true,
-      transcript: "Aaj tamatar thoda kam aaya hai aur rate 60 rupaye hai",
+      ok: false,
+      error: "Transcription unavailable. Please try speaking again or type your observation.",
     }));
 };
 

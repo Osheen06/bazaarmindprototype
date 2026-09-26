@@ -139,8 +139,7 @@ export default function More() {
           We start with one community and one market, and grow into an intelligence network for offline commerce.
         </p>
         <p className="text-xs text-[#8A8A82] mt-4">
-          Integrity note: This is a demonstration MVP. Market data is synthetic and labelled as such. Gemini interpretation is live.
-          No real users, vendors, pilot results, revenue, partnerships, or testimonials are represented.
+          Integrity note: This demonstration of BazaarMind uses illustrative synthetic market data, clearly labelled as DEMO. No real users, commercial partnerships, or fabricated traction metrics are claimed.
         </p>
       </div>
     </div>

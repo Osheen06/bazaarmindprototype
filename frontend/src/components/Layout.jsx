@@ -84,7 +84,7 @@ const SIDEBAR_NAV = [
   },
   {
     to: "/ask",
-    label: "Gemini Intelligence",
+    label: "Ask BazaarMind",
     icon: Sparkles,
     testid: "side-ask",
   },
@@ -212,7 +212,7 @@ export default function Layout({ children }) {
             <div className="rounded-xl bg-white border border-[#E5DEC9] px-3 py-2.5">
               <div className="font-semibold text-sm text-[#1E2022]">
                 {currentMarket?.name ||
-                  "INA Market"}
+                  "INA MARKET — BAZAARMIND DEMO"}
               </div>
 
               <div className="text-[11px] text-[#8A8A82]">
@@ -247,7 +247,7 @@ export default function Layout({ children }) {
               <div className="hidden md:block min-w-0">
                 <div className="font-display font-semibold text-[#1E2022] truncate">
                   {currentMarket?.name ||
-                    "INA Market"}
+                    "INA MARKET — BAZAARMIND DEMO"}
                 </div>
 
                 <div className="text-[11px] text-[#5C6360] truncate">

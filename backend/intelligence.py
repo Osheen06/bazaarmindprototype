@@ -1,168 +1,225 @@
-"""BazaarMind Market Intelligence Engine.
+"""BazaarMind deterministic market intelligence engine.
 
-Converts raw signals into Market Pulse:
-RAW SIGNALS -> NORMALIZATION -> CLASSIFICATION -> RECENCY -> CORROBORATION
--> CONFIDENCE -> MARKET SNAPSHOT -> MARKET PULSE
-
-Reads only confirmed, non-expired signals from Mongo. Designed so the same
-aggregation can later run over real pilot data without changing the API surface.
+Aggregates structured market signals into an evidence-backed Market Pulse.
+Gemini interprets unstructured human inputs into signals; this engine computes
+availability, demand, observed price ranges, source diversity, and confidence.
 """
 from datetime import datetime, timezone
-from collections import Counter
 from typing import List, Dict, Any, Optional
+import statistics
+import logging
 
 from gemini_service import CANONICAL_PRODUCTS
 
-AVAILABILITY_DISPLAY = {"HIGH": "Good", "NORMAL": "Normal", "LOW": "Tight", "UNKNOWN": "Unknown"}
-DEMAND_DISPLAY = {"HIGH": "Elevated", "NORMAL": "Normal", "LOW": "Low", "UNKNOWN": "Unknown"}
+logger = logging.getLogger(__name__)
 
+AVAILABILITY_DISPLAY = {
+    "HIGH": "Good",
+    "NORMAL": "Normal",
+    "LOW": "Tight",
+    "UNKNOWN": "Unknown",
+}
+
+DEMAND_DISPLAY = {
+    "HIGH": "Elevated",
+    "NORMAL": "Normal",
+    "LOW": "Low",
+    "UNKNOWN": "Unknown",
+}
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
-
-def _parse_dt(value) -> Optional[datetime]:
-    if isinstance(value, datetime):
-        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-    if isinstance(value, str):
-        try:
-            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
-            return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-        except ValueError:
-            return None
-    return None
-
+def _parse_dt(dt_str: Optional[str]) -> Optional[datetime]:
+    if not dt_str:
+        return None
+    try:
+        return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
 
 def _minutes_ago(dt: Optional[datetime]) -> Optional[int]:
     if not dt:
         return None
-    return int((_now() - dt).total_seconds() // 60)
-
+    delta = _now() - dt
+    return max(0, int(delta.total_seconds() // 60))
 
 def _humanize_minutes(mins: Optional[int]) -> str:
     if mins is None:
-        return "unknown"
+        return "recently"
     if mins < 1:
         return "just now"
     if mins < 60:
-        return f"{mins} min ago"
+        return f"{mins}m ago"
     hours = mins // 60
     if hours < 24:
-        return f"{hours} hr ago"
-    return f"{hours // 24} d ago"
+        return f"{hours}h ago"
+    return f"{hours // 24}d ago"
 
-
-def _mode(values: List[str]) -> Optional[str]:
-    values = [v for v in values if v and v != "UNKNOWN"]
-    if not values:
+def _mode_or_last(items: List[str]) -> Optional[str]:
+    if not items:
         return None
-    return Counter(values).most_common(1)[0][0]
+    try:
+        return statistics.mode(items)
+    except statistics.StatisticsError:
+        return items[-1]
 
-
-def _confidence(vendor_obs: int, agreement: float, recent_mins: Optional[int]) -> str:
-    if vendor_obs <= 1:
-        base = "Low"
-    elif vendor_obs <= 4:
-        base = "Medium"
-    else:
-        base = "High"
-    if agreement < 0.6 and base == "High":
-        base = "Medium"
-    if agreement < 0.5 and base == "Medium":
-        base = "Low"
-    if recent_mins is not None and recent_mins > 720:  # stale > 12h
-        base = "Low" if base == "Medium" else ("Medium" if base == "High" else base)
-    return base
-
+def _compute_price_range(prices: List[float], unit: Optional[str] = "kg") -> Optional[str]:
+    if not prices:
+        return None
+    u = unit or "kg"
+    p_min = round(min(prices))
+    p_max = round(max(prices))
+    if p_min == p_max:
+        return f"₹{p_min}/{u}"
+    return f"₹{p_min}–₹{p_max}/{u}"
 
 def build_product_pulse(product: str, signals: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    now = _now()
-    active = []
-    for s in signals:
-        exp = _parse_dt(s.get("expiresAt"))
-        if exp and exp < now:
-            continue
-        active.append(s)
+    """Build aggregated market evidence for a single produce item."""
+    now_iso = _now().isoformat()
+    # Filter active, non-expired signals
+    active = [s for s in signals if s.get("status") == "confirmed" and s.get("expiresAt", "") > now_iso]
     if not active:
         return None
 
     vendor_signals = [s for s in active if s.get("source") == "VENDOR"]
     shopper_signals = [s for s in active if s.get("source") == "SHOPPER"]
 
-    avail_votes = [s.get("availability") for s in active if s.get("availability")]
-    demand_votes = [s.get("demandLevel") for s in active if s.get("demandLevel")]
+    # Source diversity: count distinct independent stalls
+    stalls = set()
+    for s in vendor_signals:
+        v_id = s.get("vendorId") or s.get("vendorName")
+        if v_id:
+            stalls.add(v_id)
+    independent_vendor_count = max(len(stalls), 1 if vendor_signals else 0)
 
-    avail = _mode(avail_votes)
-    demand = _mode(demand_votes)
-    # Shopper demand pressure lifts demand if many shoppers want it
-    if len(shopper_signals) >= 15 and demand in (None, "NORMAL", "LOW"):
-        demand = "HIGH"
-    elif len(shopper_signals) >= 6 and demand in (None, "LOW"):
-        demand = "NORMAL"
+    # Availability aggregation
+    avails = [s.get("availability") for s in vendor_signals if s.get("availability") and s.get("availability") != "UNKNOWN"]
+    avail = _mode_or_last(avails) if avails else "NORMAL"
 
-    prices = [(s.get("reportedPrice"), s.get("priceUnit")) for s in active
-              if isinstance(s.get("reportedPrice"), (int, float))]
-    price_signal = None
-    price_low = price_high = price_unit = None
-    if prices:
-        vals = sorted(p[0] for p in prices)
-        price_unit = next((u for _, u in prices if u), "kg")
-        price_low, price_high = vals[0], vals[-1]
-        if price_low == price_high:
-            price_signal = f"₹{round(price_low)}/{price_unit}"
+    # Conflicting conditions check
+    conflicting = False
+    conflict_note = None
+    if len(set(avails)) > 1:
+        if "LOW" in avails and ("HIGH" in avails or "NORMAL" in avails):
+            conflicting = True
+            conflict_note = "Different stalls report varying stock levels today."
+
+    # Demand aggregation
+    demands = [s.get("demandLevel") for s in shopper_signals if s.get("demandLevel") and s.get("demandLevel") != "UNKNOWN"]
+    if not demands:
+        demands = [s.get("demandLevel") for s in vendor_signals if s.get("demandLevel") and s.get("demandLevel") != "UNKNOWN"]
+    demand = _mode_or_last(demands) if demands else "NORMAL"
+
+    # Reported observed prices
+    prices = [float(s["reportedPrice"]) for s in vendor_signals if s.get("reportedPrice") is not None]
+    price_units = [s.get("priceUnit") for s in vendor_signals if s.get("priceUnit")]
+    price_unit = _mode_or_last(price_units) or ("piece" if product == "Lemon" else ("dozen" if product == "Banana" else "kg"))
+    price_signal = _compute_price_range(prices, price_unit)
+    price_low = round(min(prices), 1) if prices else None
+    price_high = round(max(prices), 1) if prices else None
+    price_count = len(prices)
+
+    # Explainable confidence calculation
+    v_count = len(vendor_signals)
+    s_count = len(shopper_signals)
+    if v_count >= 3 and independent_vendor_count >= 2:
+        conf = "HIGH"
+    elif v_count >= 1 or s_count >= 2:
+        conf = "MEDIUM"
+    else:
+        conf = "EARLY SIGNAL"
+
+    # Freshness
+    dts = [_parse_dt(s.get("createdAt")) for s in active if _parse_dt(s.get("createdAt"))]
+    recent_dt = max(dts) if dts else None
+    recent_mins = _minutes_ago(recent_dt)
+    is_stale = recent_mins is not None and recent_mins > 720  # older than 12h
+    stale_warning = "Evidence is older than 12 hours. Stalls may have new arrivals." if is_stale else None
+
+    # Embedded evidence signals for complete traceability
+    sorted_active = sorted(active, key=lambda s: s.get("createdAt") or "", reverse=True)
+    evidence_items = []
+    for s in sorted_active[:15]:
+        s_dt = _parse_dt(s.get("createdAt"))
+        s_mins = _minutes_ago(s_dt)
+        src = s.get("source", "VENDOR")
+        
+        if src == "VENDOR":
+            val_parts = []
+            if s.get("reportedPrice"):
+                u = s.get("priceUnit") or price_unit
+                val_parts.append(f"₹{round(s['reportedPrice'])}/{u}")
+            if s.get("availability"):
+                val_parts.append(f"Availability: {AVAILABILITY_DISPLAY.get(s['availability'], s['availability'])}")
+            obs_val = " · ".join(val_parts) if val_parts else "Stall observation"
         else:
-            price_signal = f"₹{round(price_low)}–₹{round(price_high)}/{price_unit}"
+            qty = s.get("quantity")
+            obs_val = f"{qty} requested" if qty else "Shopper demand"
 
-    # agreement = share of the dominant availability vote
-    agreement = 1.0
-    if avail_votes:
-        agreement = Counter(avail_votes).most_common(1)[0][1] / len(avail_votes)
-
-    last_dt = max((_parse_dt(s.get("createdAt")) for s in active if _parse_dt(s.get("createdAt"))),
-                  default=None)
-    recent_mins = _minutes_ago(last_dt)
-
-    confidence = _confidence(len(vendor_signals), agreement, recent_mins)
-
-    conflicting = bool(avail_votes) and agreement < 0.6
+        evidence_items.append({
+            "id": s.get("id"),
+            "source": src,
+            "sourceLabel": "Vendor observation" if src == "VENDOR" else "Shopper demand",
+            "observedValue": obs_val,
+            "reportedPrice": s.get("reportedPrice"),
+            "priceUnit": s.get("priceUnit"),
+            "availability": s.get("availability"),
+            "rawText": s.get("rawText", ""),
+            "confidence": s.get("confidence", "MEDIUM"),
+            "timestamp": s.get("createdAt"),
+            "timeAgo": _humanize_minutes(s_mins),
+            "dataSource": s.get("dataSource", "DEMO"),
+            "vendorName": s.get("vendorName") if src == "VENDOR" else None,
+        })
 
     return {
         "product": product,
         "availability": AVAILABILITY_DISPLAY.get(avail, "Unknown"),
         "availabilityCode": avail or "UNKNOWN",
-        "demand": DEMAND_DISPLAY.get(demand, "Unknown"),
-        "demandCode": demand or "UNKNOWN",
+        "demand": DEMAND_DISPLAY.get(demand, "Normal"),
+        "demandCode": demand or "NORMAL",
         "reportedPriceSignal": price_signal,
         "priceLow": price_low,
         "priceHigh": price_high,
         "priceUnit": price_unit,
-        "vendorObservations": len(vendor_signals),
-        "shopperSignals": len(shopper_signals),
+        "priceObservationCount": price_count,
+        "vendorObservations": v_count,
+        "independentVendors": independent_vendor_count,
+        "independentStallsCount": independent_vendor_count,
+        "shopperSignals": s_count,
         "signalCount": len(active),
-        "confidence": confidence,
+        "confidence": conf,
         "conflicting": conflicting,
+        "conflictNote": conflict_note,
+        "isStale": is_stale,
+        "staleWarning": stale_warning,
         "lastUpdatedMinutes": recent_mins,
         "lastUpdated": _humanize_minutes(recent_mins),
+        "evidence": evidence_items,
+        "evidenceSignals": evidence_items,
     }
-
 
 def _overall_confidence(products: List[Dict[str, Any]]) -> str:
     if not products:
-        return "Low"
-    score = {"Low": 0, "Medium": 1, "High": 2}
-    avg = sum(score[p["confidence"]] for p in products) / len(products)
-    if avg >= 1.5:
+        return "Early signal"
+    high_count = sum(1 for p in products if p.get("confidence") == "HIGH")
+    if high_count >= len(products) * 0.5:
         return "High"
-    if avg >= 0.8:
+    if any(p.get("confidence") in ("HIGH", "MEDIUM") for p in products):
         return "Medium"
-    return "Low"
+    return "Early signal"
 
-
-async def compute_market_pulse(db, market_id: str, data_source: str = None) -> Dict[str, Any]:
-    query = {"marketId": market_id, "status": "confirmed"}
-    if data_source:
+async def compute_market_pulse(db, market_id: str, data_source: Optional[str] = "DEMO") -> Dict[str, Any]:
+    """Compute living market pulse for a given market from persisted database signals."""
+    query: Dict[str, Any] = {
+        "marketId": market_id,
+        "status": "confirmed",
+    }
+    if data_source in ("DEMO", "PILOT", "REAL"):
         query["dataSource"] = data_source
-    cursor = db.market_signals.find(query, {"_id": 0})
+
+    cursor = db.market_signals.find(query).sort("createdAt", -1)
     signals = await cursor.to_list(5000)
 
     by_product: Dict[str, List[Dict[str, Any]]] = {}
@@ -174,7 +231,8 @@ async def compute_market_pulse(db, market_id: str, data_source: str = None) -> D
         pulse = build_product_pulse(product, by_product.get(product, []))
         if pulse:
             products.append(pulse)
-    # include any non-canonical products that received signals
+
+    # Any non-canonical items with signals
     for product, sigs in by_product.items():
         if product not in CANONICAL_PRODUCTS:
             pulse = build_product_pulse(product, sigs)
@@ -183,21 +241,29 @@ async def compute_market_pulse(db, market_id: str, data_source: str = None) -> D
 
     last_dts = [_parse_dt(s.get("createdAt")) for s in signals if _parse_dt(s.get("createdAt"))]
     last_updated = max(last_dts) if last_dts else None
+    recent_mins = _minutes_ago(last_updated)
+
+    v_obs = sum(p.get("vendorObservations", 0) for p in products)
+    s_sig = sum(p.get("shopperSignals", 0) for p in products)
 
     return {
         "marketId": market_id,
         "products": products,
         "overallConfidence": _overall_confidence(products),
         "totalSignals": len(signals),
-        "lastUpdated": _humanize_minutes(_minutes_ago(last_updated)),
+        "activeSignalsCount": len(signals),
+        "vendorObservationsCount": v_obs,
+        "shopperSignalsCount": s_sig,
+        "lastUpdated": _humanize_minutes(recent_mins),
+        "freshness": "Active today" if (recent_mins is None or recent_mins < 720) else "Stale (last updated > 12h ago)",
+        "isStale": recent_mins is not None and recent_mins > 720,
         "generatedAt": _now().isoformat(),
         "synthetic": data_source == "DEMO",
-        "dataSource": data_source or "ALL",
+        "dataSource": data_source or "DEMO",
     }
 
-
 def build_pulse_context(pulse: Dict[str, Any], market_name: str) -> str:
-    """Compact textual evidence used to ground the Ask BazaarMind answers."""
+    """Compact textual evidence used to ground Ask BazaarMind answers."""
     source = pulse.get("dataSource", "DEMO")
     source_label = "synthetic DEMO signals" if source == "DEMO" else f"{source} signals"
     lines = [
@@ -208,62 +274,8 @@ def build_pulse_context(pulse: Dict[str, Any], market_name: str) -> str:
         lines.append(
             f"- {p['product']}: availability {p['availability']}, demand {p['demand']}, "
             f"reported price signal {price}, evidence {p['vendorObservations']} vendor observations "
-            f"+ {p['shopperSignals']} shopper signals, confidence {p['confidence']}"
-            + (", vendors reporting conflicting conditions" if p['conflicting'] else "")
+            f"({p.get('independentVendors', 1)} independent vendors) + {p['shopperSignals']} shopper signals, confidence {p['confidence']}"
+            + (", vendors reporting conflicting conditions" if p.get('conflicting') else "")
             + f", updated {p['lastUpdated']}."
         )
     return "\n".join(lines)
-
-
-async def capture_snapshot(db, market_id: str, data_source: str = "DEMO") -> Dict[str, Any]:
-    """Persist a MarketSnapshot bundle computed from actual stored signals."""
-    pulse = await compute_market_pulse(db, market_id, data_source=data_source)
-    doc = {
-        "id": f"{market_id}-{data_source}-{int(_now().timestamp())}",
-        "marketId": market_id,
-        "dataSource": data_source,
-        "capturedAt": _now().isoformat(),
-        "overallConfidence": pulse["overallConfidence"],
-        "totalSignals": pulse["totalSignals"],
-        "products": [
-            {
-                "product": p["product"],
-                "availability": p["availability"],
-                "demand": p["demand"],
-                "reportedPriceSignal": p["reportedPriceSignal"],
-                "priceLow": p["priceLow"],
-                "priceHigh": p["priceHigh"],
-                "confidence": p["confidence"],
-                "signalCount": p["signalCount"],
-                "vendorObservations": p["vendorObservations"],
-                "shopperSignals": p["shopperSignals"],
-            }
-            for p in pulse["products"]
-        ],
-    }
-    await db.snapshot_history.insert_one({**doc})
-    return doc
-
-
-async def compare_snapshots(db, market_id: str, data_source: str = "DEMO") -> Dict[str, Any]:
-    """Compare the two most recent stored snapshots and surface product changes."""
-    cursor = db.snapshot_history.find(
-        {"marketId": market_id, "dataSource": data_source}, {"_id": 0}
-    ).sort("capturedAt", -1).limit(2)
-    snaps = await cursor.to_list(2)
-    if len(snaps) < 2:
-        return {"dataSource": data_source, "available": False, "captures": len(snaps), "changes": []}
-    latest, prev = snaps[0], snaps[1]
-    prev_map = {p["product"]: p for p in prev["products"]}
-    changes = []
-    for p in latest["products"]:
-        old = prev_map.get(p["product"])
-        if not old:
-            continue
-        for field, label in (("availability", "Availability"), ("demand", "Demand"), ("reportedPriceSignal", "Price")):
-            if p.get(field) and old.get(field) and p[field] != old[field]:
-                changes.append({"product": p["product"], "field": label, "from": old[field], "to": p[field]})
-    return {
-        "dataSource": data_source, "available": True,
-        "latestAt": latest["capturedAt"], "previousAt": prev["capturedAt"], "changes": changes,
-    }

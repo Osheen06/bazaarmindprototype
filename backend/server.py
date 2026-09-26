@@ -6,6 +6,7 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -24,19 +25,8 @@ from utils import haversine_km
 ROOT_DIR = Path(__file__).resolve().parent
 load_dotenv(ROOT_DIR / ".env")
 
-# Load environment before importing services that read configuration.
-mongo_url = os.environ.get("MONGO_URL")
-if not mongo_url:
-    raise RuntimeError(
-        "MONGO_URL environment variable is required. "
-        "Set it to your MongoDB connection string (e.g. mongodb://localhost:27017)."
-    )
-
-db_name = os.environ.get("DB_NAME")
-if not db_name:
-    raise RuntimeError(
-        "DB_NAME environment variable is required (e.g. bazaarmind)."
-    )
+mongo_url = os.environ.get("MONGO_URL", "mock://localhost:27017")
+db_name = os.environ.get("DB_NAME", "bazaarmind")
 
 def _init_db():
     use_mock = mongo_url.startswith("mock://") or os.environ.get("USE_MOCK_MONGO") == "true"
@@ -62,7 +52,6 @@ def _init_db():
 client, db = _init_db()
 
 WEBHOOK_CRON_SECRET = os.environ.get("WEBHOOK_CRON_SECRET", "")
-
 
 @asynccontextmanager
 async def lifespan(app):
@@ -96,7 +85,6 @@ async def lifespan(app):
     # --- shutdown ---
     client.close()
 
-
 app = FastAPI(title="BazaarMind API", lifespan=lifespan)
 api = APIRouter(prefix="/api")
 
@@ -114,12 +102,10 @@ DEFAULT_MARKET = demo_seed.DEMO_MARKET["id"]
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
-
 # ----------------------------- Models -----------------------------
 class InterpretRequest(BaseModel):
     text: str = ""
     imageBase64: Optional[str] = None
-
 
 class SignalCreate(BaseModel):
     marketId: str = DEFAULT_MARKET
@@ -130,6 +116,7 @@ class SignalCreate(BaseModel):
     availability: Optional[str] = None
     reportedPrice: Optional[float] = None
     priceUnit: Optional[str] = None
+    quantity: Optional[str] = None
     demandLevel: Optional[str] = None
     language: str = "HINGLISH"
     rawText: str = ""
@@ -140,23 +127,20 @@ class SignalCreate(BaseModel):
     participantId: Optional[str] = None
     dataSource: Optional[str] = None
 
-
 class ShoppingListRequest(BaseModel):
     text: str
     marketId: str = DEFAULT_MARKET
     participantId: Optional[str] = None
-
+    persist: bool = True
 
 class AskRequest(BaseModel):
     question: str
     marketId: str = DEFAULT_MARKET
     dataSource: str = "DEMO"
 
-
 class AnalyticsEvent(BaseModel):
     event: str
     props: Dict[str, Any] = {}
-
 
 class OnboardShopper(BaseModel):
     name: Optional[str] = None
@@ -164,7 +148,6 @@ class OnboardShopper(BaseModel):
     marketId: str = DEFAULT_MARKET
     language: str = "HINGLISH"
     consent: bool = False
-
 
 class OnboardVendor(BaseModel):
     name: Optional[str] = None
@@ -175,12 +158,10 @@ class OnboardVendor(BaseModel):
     consent: bool = False
     signalMethod: str = "text"
 
-
 def _resolve_source(participant_id: Optional[str], explicit: Optional[str]) -> str:
     if explicit in ("DEMO", "PILOT", "REAL"):
         return explicit
     return "PILOT" if participant_id else "DEMO"
-
 
 async def _resolve_source_async(participant_id: Optional[str], explicit: Optional[str]) -> str:
     if participant_id:
@@ -192,9 +173,9 @@ async def _resolve_source_async(participant_id: Optional[str], explicit: Optiona
         return explicit
     return "DEMO"
 
-
 # ----------------------------- Health -----------------------------
 @app.get("/health")
+@api.get("/health")
 async def health():
     try:
         await db.command("ping")
@@ -211,186 +192,79 @@ async def health():
         "mongo": mongo_ok,
     }
 
-
 # ----------------------------- Basic -----------------------------
 @api.get("/")
 async def root():
     return {"app": "BazaarMind", "tagline": "The Market That Thinks as One.", "model": gemini_service.GEMINI_MODEL}
 
-
 @api.get("/markets")
 async def get_markets():
     return await db.markets.find({}, {"_id": 0}).to_list(100)
 
-
 @api.get("/markets/nearby")
-async def markets_nearby(
-    lat: float = Query(...),
-    lng: float = Query(...),
+async def get_markets_nearby(
+    lat: Optional[float] = Query(None),
+    lng: Optional[float] = Query(None),
     dataSource: str = Query("DEMO"),
-    radiusKm: float = Query(25.0, ge=0.5, le=100.0),
+    radiusKm: float = Query(25.0),
 ):
-    """
-    Resolve nearby BazaarMind markets from the user's current coordinates.
+    all_markets = await db.markets.find({}, {"_id": 0}).to_list(100)
+    user_has_coords = lat is not None and lng is not None
+    markets_with_dist = []
+    for m in all_markets:
+        d_km = None
+        if user_has_coords and m.get("lat") is not None and m.get("lng") is not None:
+            d_km = round(haversine_km(lat, lng, m["lat"], m["lng"]), 1)
+        markets_with_dist.append({**m, "distanceKm": d_km})
 
-    Location is used only to select market context.
-    It is NOT stored as a user profile location.
+    if user_has_coords:
+        within_radius = [m for m in markets_with_dist if m["distanceKm"] is not None and m["distanceKm"] <= radiusKm]
+        within_radius.sort(key=lambda x: x["distanceKm"])
+    else:
+        within_radius = markets_with_dist
 
-    DEMO:
-      - synthetic markets are available for discovery
-      - only markets with DEMO intelligence are marked intelligenceAvailable
-
-    PILOT:
-      - only markets with actual pilot participants/signals are eligible
-      - no synthetic DEMO data is mixed into PILOT results
-    """
-
-    if dataSource not in ("DEMO", "PILOT", "REAL"):
-        dataSource = "DEMO"
-
-    # Basic coordinate validation.
-    if not (-90 <= lat <= 90 and -180 <= lng <= 180):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid latitude or longitude.",
-        )
-
-    markets = await db.markets.find(
-        {},
-        {"_id": 0}
-    ).to_list(200)
-
-    nearby = []
-
-    for market in markets:
-        market_lat = market.get("lat")
-        market_lng = market.get("lng")
-
-        if market_lat is None or market_lng is None:
-            continue
-
-        distance = haversine_km(
-            lat,
-            lng,
-            float(market_lat),
-            float(market_lng),
-        )
-
-        if distance > radiusKm:
-            continue
-
-        market_id = market["id"]
-
-        # ---------------------------------------------------------
-        # Determine whether this market actually has intelligence.
-        # ---------------------------------------------------------
-
-        signal_query = {
-            "marketId": market_id,
-            "status": "confirmed",
-            "dataSource": dataSource,
+    markets_to_use = within_radius if within_radius else markets_with_dist
+    enriched = []
+    recommended = None
+    for m in markets_to_use:
+        query: Dict[str, Any] = {"marketId": m["id"], "status": "confirmed"}
+        if dataSource in ("DEMO", "PILOT", "REAL"):
+            query["dataSource"] = dataSource
+        sig_count = await db.market_signals.count_documents(query)
+        has_intel = sig_count > 0
+        market_entry = {
+            **m,
+            "signalCount": sig_count,
+            "hasIntelligence": has_intel,
+            "intelligenceAvailable": has_intel,
+            "status": "active" if has_intel else "discovery_only",
         }
-
-        if dataSource == "DEMO":
-            signal_query["synthetic"] = True
-
-        elif dataSource == "PILOT":
-            signal_query["synthetic"] = False
-
-        elif dataSource == "REAL":
-            signal_query["synthetic"] = False
-
-        signal_count = await db.market_signals.count_documents(signal_query)
-
-        # Check whether the market has active, non-expired signals.
-        now = datetime.now(timezone.utc).isoformat()
-
-        active_query = {
-            **signal_query,
-            "expiresAt": {"$gt": now},
-        }
-
-        active_signal_count = await db.market_signals.count_documents(
-            active_query
-        )
-
-        # Pilot participation count.
-        participant_count = await db.pilot_participants.count_documents(
-            {"marketId": market_id}
-        )
-
-        # A market has intelligence only when there are active signals.
-        intelligence_available = active_signal_count > 0
-
-        nearby.append({
-            "id": market_id,
-            "name": market.get("name", "BazaarMind Market"),
-            "area": market.get("area"),
-            "community": market.get("community"),
-            "lat": market_lat,
-            "lng": market_lng,
-
-            "distanceKm": round(distance, 2),
-
-            "dataSource": dataSource,
-
-            "synthetic": bool(market.get("synthetic", False)),
-
-            "signalCount": signal_count,
-            "activeSignalCount": active_signal_count,
-
-            "participantCount": participant_count,
-
-            "intelligenceAvailable": intelligence_available,
-
-            "discoveryOnly": not intelligence_available,
-        })
-
-    # Nearest first.
-    nearby.sort(key=lambda m: m["distanceKm"])
-
-    # Prefer the nearest market that actually has intelligence.
-    recommended = next(
-        (
-            market
-            for market in nearby
-            if market["intelligenceAvailable"]
-        ),
-        None,
-    )
+        enriched.append(market_entry)
+        if has_intel and recommended is None:
+            recommended = m["id"]
 
     return {
-        "ok": True,
-        "origin": {
-            "lat": lat,
-            "lng": lng,
-        },
-        "dataSource": dataSource,
+        "userLocation": {"lat": lat, "lng": lng} if user_has_coords else None,
         "radiusKm": radiusKm,
-        "markets": nearby,
-        "recommendedMarketId": (
-            recommended["id"]
-            if recommended
-            else None
-        ),
+        "dataSource": dataSource,
+        "markets": enriched,
+        "recommendedMarketId": recommended,
         "hasNearbyIntelligence": recommended is not None,
     }
-
 
 @api.get("/products")
 async def get_products():
     return [{"name": p} for p in gemini_service.CANONICAL_PRODUCTS]
-
 
 # ----------------------------- Market Pulse -----------------------------
 @api.get("/market-pulse")
 async def market_pulse(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
     market = await db.markets.find_one({"id": marketId}, {"_id": 0})
     pulse = await intelligence.compute_market_pulse(db, marketId, data_source=dataSource)
-    pulse["market"] = market or {"id": marketId, "name": "Demo Market"}
+    pulse["market"] = market or {"id": marketId, "name": "INA MARKET — BAZAARMIND DEMO"}
     pulse["dataSource"] = dataSource
+    pulse["ok"] = True
     return pulse
-
 
 # ----------------------------- Gemini: interpret signal -----------------------------
 @api.post("/signals/interpret")
@@ -399,21 +273,23 @@ async def signals_interpret(req: InterpretRequest):
         raise HTTPException(status_code=400, detail="Provide text or an image to interpret.")
     try:
         result = await gemini_service.interpret_signal(req.text, req.imageBase64, session_id=str(uuid.uuid4()))
-        return {"ok": True, "signal": result, "live": True}
+        return {"ok": True, "signal": result, "data": result, "live": True}
     except Exception:
         logger.exception("interpret failed")
         return JSONResponse(status_code=200, content={"ok": False, "error": "BazaarMind couldn't interpret that right now. Please try again."})
 
-
 # ----------------------------- Persist signal -----------------------------
 def _moderate(signal: Dict[str, Any]) -> str:
     price = signal.get("reportedPrice")
-    if price is not None and (price <= 0 or price > 100000):
+    if price is not None and (price <= 0 or price > 10000):
         return "pending"
-    if not signal.get("product") or signal.get("product") == "Unknown":
+    prod = signal.get("product")
+    if not prod or prod == "Unknown" or len(prod) > 50:
+        return "pending"
+    valid_types = ("DEMAND", "SUPPLY", "AVAILABILITY", "PRICE", "CONTEXT", "PRICE_OBSERVATION")
+    if signal.get("signalType") and signal.get("signalType") not in valid_types:
         return "pending"
     return "confirmed"
-
 
 @api.post("/signals")
 async def create_signal(req: SignalCreate):
@@ -429,16 +305,43 @@ async def create_signal(req: SignalCreate):
     doc["corroborationCount"] = 1
     doc["synthetic"] = doc["dataSource"] == "DEMO"
     doc["status"] = _moderate(doc)
+
+    # 30-second anti-spam deduplication
+    recent_dup = await db.market_signals.find_one({
+        "marketId": doc["marketId"],
+        "vendorName": doc.get("vendorName"),
+        "product": doc["product"],
+        "reportedPrice": doc.get("reportedPrice"),
+        "createdAt": {"$gt": (created - timedelta(seconds=30)).isoformat()}
+    })
+    if recent_dup:
+        recent_dup.pop("_id", None)
+        return {"ok": True, "signal": recent_dup, "published": True, "duplicate": True}
+
     await db.market_signals.insert_one({**doc})
     doc.pop("_id", None)
     return {"ok": True, "signal": doc, "published": doc["status"] == "confirmed"}
 
-
 @api.get("/signals")
-async def list_signals(marketId: str = DEFAULT_MARKET, limit: int = 60):
-    cursor = db.market_signals.find({"marketId": marketId}, {"_id": 0}).sort("createdAt", -1).limit(limit)
+async def list_signals(
+    marketId: str = DEFAULT_MARKET,
+    product: Optional[str] = None,
+    dataSource: Optional[str] = None,
+    limit: int = 60,
+):
+    query: Dict[str, Any] = {"marketId": marketId, "status": "confirmed"}
+    if product:
+        norm = gemini_service.normalize_product(product) or product
+        query["product"] = norm
+    if dataSource:
+        query["dataSource"] = dataSource
+    cursor = db.market_signals.find(query, {"_id": 0}).sort("createdAt", -1).limit(limit)
     return await cursor.to_list(limit)
 
+@api.post("/demo/reset")
+async def demo_reset():
+    result = await demo_seed.reset_demo(db)
+    return {"ok": True, "message": "Demo market reset to initial state.", **result}
 
 # ----------------------------- Shopping list -----------------------------
 @api.post("/shopping-list/parse")
@@ -474,42 +377,74 @@ async def shopping_list_parse(req: ShoppingListRequest):
             demand_docs.append({
                 "id": str(uuid.uuid4()), "marketId": req.marketId, "vendorId": None, "vendorName": None,
                 "product": it["product"], "signalType": "DEMAND", "availability": None, "reportedPrice": None,
-                "priceUnit": None, "demandLevel": "NORMAL", "language": parsed.get("language", "ENGLISH"),
+                "priceUnit": None, "quantity": it.get("quantity"), "demandLevel": "NORMAL", "language": parsed.get("language", "ENGLISH"),
                 "rawText": req.text, "imageUrl": None, "source": "SHOPPER", "confidence": "MEDIUM",
-                "reasoning": "Shopper list demand signal.", "createdAt": created.isoformat(),
+                "reasoning": f"Shopper requested {it.get('quantity') or 'unspecified amount'}.", "createdAt": created.isoformat(),
                 "expiresAt": (created + timedelta(hours=12)).isoformat(), "status": "confirmed",
                 "corroborationCount": 1, "synthetic": data_source == "DEMO", "dataSource": data_source,
                 "participantId": req.participantId,
             })
-    if demand_docs:
-        await db.market_signals.insert_many(demand_docs)
-
-    await db.shopping_lists.insert_one({
-        "id": str(uuid.uuid4()), "marketId": req.marketId, "rawText": req.text,
-        "items": [i["product"] for i in items], "dataSource": data_source,
-        "participantId": req.participantId, "createdAt": created.isoformat(),
-    })
+    if req.persist:
+        if demand_docs:
+            await db.market_signals.insert_many(demand_docs)
+        await db.shopping_lists.insert_one({
+            "id": str(uuid.uuid4()), "marketId": req.marketId, "rawText": req.text,
+            "items": [i["product"] for i in items], "dataSource": data_source,
+            "participantId": req.participantId, "createdAt": created.isoformat(),
+        })
 
     summary = f"BazaarMind noticed {tight} item{'s' if tight > 1 else ''} with tighter availability today." if tight else None
-    return {"ok": True, "items": items, "tightCount": tight, "summary": summary, "language": parsed.get("language", "ENGLISH")}
-
+    return {
+        "ok": True,
+        "items": items,
+        "tightCount": tight,
+        "summary": summary,
+        "language": parsed.get("language", "ENGLISH"),
+        "persisted": req.persist,
+    }
 
 # ----------------------------- Ask BazaarMind -----------------------------
 @api.post("/ask-bazaar")
 async def ask_bazaar(req: AskRequest):
     pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=req.dataSource)
     market = await db.markets.find_one({"id": req.marketId}, {"_id": 0})
-    market_name = market["name"] if market else "Demo Market"
+    market_name = market["name"] if market else "INA MARKET — BAZAARMIND DEMO"
     if not pulse["products"]:
-        return {"ok": True, "answer": "I don't have enough signals from this market yet.", "live": True}
+        return {
+            "ok": True,
+            "answer": "BazaarMind doesn't have enough local signals in this market yet to answer that with certainty.",
+            "live": True,
+            "totalSignals": 0,
+            "vendorObservations": 0,
+            "shopperSignals": 0,
+            "freshness": "No signals yet",
+        }
     context = intelligence.build_pulse_context(pulse, market_name)
     try:
-        answer = await gemini_service.ask_bazaar(req.question, context, session_id=str(uuid.uuid4()))
-        return {"ok": True, "answer": answer, "live": True}
+        answer = await gemini_service.ask_bazaar(req.question, context, session_id=str(uuid.uuid4()), data_source=req.dataSource)
+        return {
+            "ok": True,
+            "answer": answer,
+            "live": True,
+            "totalSignals": pulse.get("activeSignalsCount", len(pulse["products"])),
+            "vendorObservations": pulse.get("vendorObservationsCount", 0),
+            "shopperSignals": pulse.get("shopperSignalsCount", 0),
+            "generatedAt": pulse.get("generatedAt"),
+            "freshness": pulse.get("freshness", "Active today"),
+        }
     except Exception:
         logger.exception("ask failed")
-        return JSONResponse(status_code=200, content={"ok": False, "error": "BazaarMind couldn't interpret that right now. Please try again."})
-
+        fallback_answer = gemini_service._rule_based_ask(req.question, context)
+        return {
+            "ok": True,
+            "answer": fallback_answer,
+            "live": False,
+            "totalSignals": pulse.get("activeSignalsCount", len(pulse["products"])),
+            "vendorObservations": pulse.get("vendorObservationsCount", 0),
+            "shopperSignals": pulse.get("shopperSignalsCount", 0),
+            "generatedAt": pulse.get("generatedAt"),
+            "freshness": pulse.get("freshness", "Active today"),
+        }
 
 # ----------------------------- Voice (Whisper STT) -----------------------------
 @api.get("/voice/status")
@@ -531,7 +466,6 @@ async def voice_transcribe(audio: UploadFile = File(...)):
         logger.exception("transcription failed")
         return JSONResponse(status_code=200, content={"ok": False, "error": "BazaarMind couldn't transcribe that audio. Please try again."})
 
-
 # ----------------------------- Vendor demand -----------------------------
 @api.get("/vendor/demand")
 async def vendor_demand(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
@@ -552,7 +486,6 @@ async def vendor_demand(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"
     return {"marketId": marketId, "totalRequests": total,
             "products": [{"product": p, "requests": c, "level": level(c)} for p, c in ranked]}
 
-
 # ----------------------------- Market network -----------------------------
 @api.get("/market-network")
 async def market_network(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
@@ -571,9 +504,8 @@ async def market_network(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO
 
     vendor_nodes = [{"id": v["id"], "name": v["name"], "stall": v.get("stall"),
                      "supplySignals": vendor_counts.get(v["id"], 0)} for v in vendors]
-    return {"market": market or {"id": marketId, "name": "Demo Market"}, "vendors": vendor_nodes,
+    return {"market": market or {"id": marketId, "name": "INA MARKET — BAZAARMIND DEMO"}, "vendors": vendor_nodes,
             "shopperSignals": shopper_total, "supplySignals": sum(vendor_counts.values()), "dataSource": dataSource}
-
 
 # ----------------------------- Snapshots -----------------------------
 @api.get("/snapshots")
@@ -583,7 +515,6 @@ async def snapshots(marketId: str = DEFAULT_MARKET):
     snaps.sort(key=lambda s: order.get(s.get("label"), 99))
     return {"snapshots": snaps, "synthetic": True, "label": "Demo historical data"}
 
-
 @api.post("/snapshots/capture")
 async def snapshots_capture(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
     pulse = await intelligence.compute_market_pulse(db, marketId, data_source=dataSource)
@@ -592,7 +523,6 @@ async def snapshots_capture(marketId: str = DEFAULT_MARKET, dataSource: str = "D
     doc = await intelligence.capture_snapshot(db, marketId, dataSource)
     return {"ok": True, "snapshot": doc}
 
-
 @api.get("/snapshots/history")
 async def snapshots_history(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
     cursor = db.snapshot_history.find({"marketId": marketId, "dataSource": dataSource}, {"_id": 0}).sort("capturedAt", -1).limit(14)
@@ -600,9 +530,7 @@ async def snapshots_history(marketId: str = DEFAULT_MARKET, dataSource: str = "D
     comparison = await intelligence.compare_snapshots(db, marketId, dataSource)
     return {"history": history, "comparison": comparison, "dataSource": dataSource}
 
-
 AVAIL_SCORE = {"Good": 3, "Normal": 2, "Tight": 1, "Limited": 1, "Unknown": 0}
-
 
 @api.get("/snapshots/trends")
 async def snapshots_trends(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO", days: int = 7):
@@ -623,7 +551,6 @@ async def snapshots_trends(marketId: str = DEFAULT_MARKET, dataSource: str = "DE
     return {"dataSource": dataSource, "synthetic": dataSource == "DEMO",
             "products": [{"product": k, "points": v} for k, v in series.items()]}
 
-
 # ----------------------------- Pilot -----------------------------
 @api.get("/pilot/metrics")
 async def pilot_metrics():
@@ -643,7 +570,6 @@ async def pilot_metrics():
         ],
     }
 
-
 @api.post("/pilot/onboard/shopper")
 async def onboard_shopper(req: OnboardShopper):
     if not req.consent:
@@ -653,7 +579,6 @@ async def onboard_shopper(req: OnboardShopper):
     doc.pop("_id", None)
     return {"ok": True, "participant": doc}
 
-
 @api.post("/pilot/onboard/vendor")
 async def onboard_vendor(req: OnboardVendor):
     if not req.consent:
@@ -662,7 +587,6 @@ async def onboard_vendor(req: OnboardVendor):
     await db.pilot_participants.insert_one({**doc})
     doc.pop("_id", None)
     return {"ok": True, "participant": doc}
-
 
 @api.get("/pilot/status")
 async def pilot_status(marketId: str = DEFAULT_MARKET):
@@ -688,11 +612,9 @@ async def pilot_status(marketId: str = DEFAULT_MARKET):
         ],
     }
 
-
 class InviteCreate(BaseModel):
     community: str
     marketId: str = DEFAULT_MARKET
-
 
 @api.post("/pilot/invite")
 async def create_invite(req: InviteCreate):
@@ -701,22 +623,19 @@ async def create_invite(req: InviteCreate):
     await db.pilot_invites.insert_one({**doc})
     return {"ok": True, **doc}
 
-
 @api.get("/pilot/invite/{code}")
 async def get_invite(code: str):
     inv = await db.pilot_invites.find_one({"code": code}, {"_id": 0})
     if not inv:
         raise HTTPException(status_code=404, detail="Invite not found")
     market = await db.markets.find_one({"id": inv["marketId"]}, {"_id": 0})
-    inv["market"] = market or {"id": inv["marketId"], "name": "Demo Market"}
+    inv["market"] = market or {"id": inv["marketId"], "name": "INA MARKET — BAZAARMIND DEMO"}
     return inv
-
 
 # ----------------------------- WhatsApp (integration-ready) -----------------------------
 @api.get("/whatsapp/status")
 async def whatsapp_status():
     return whatsapp_service.status()
-
 
 @api.get("/whatsapp/webhook")
 async def whatsapp_verify(request: Request):
@@ -728,7 +647,6 @@ async def whatsapp_verify(request: Request):
     if challenge is not None:
         return PlainTextResponse(content=challenge, status_code=200)
     raise HTTPException(status_code=403, detail="verification failed")
-
 
 @api.post("/whatsapp/webhook")
 async def whatsapp_inbound(request: Request):
@@ -756,20 +674,17 @@ async def whatsapp_inbound(request: Request):
                                       "text": reply, "channel": "whatsapp", "sent": send.get("sent"), "at": now_iso()})
     return {"received": True}
 
-
 # ----------------------------- Analytics -----------------------------
 @api.post("/analytics/event")
 async def analytics_event(evt: AnalyticsEvent):
     await db.analytics_events.insert_one({"id": str(uuid.uuid4()), "event": evt.event, "props": evt.props, "at": now_iso()})
     return {"ok": True}
 
-
 @api.get("/analytics/summary")
 async def analytics_summary():
     pipeline = [{"$group": {"_id": "$event", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}]
     rows = await db.analytics_events.aggregate(pipeline).to_list(100)
     return {"events": [{"event": r["_id"], "count": r["count"]} for r in rows]}
-
 
 # ----------------------------- Cron -----------------------------
 async def _capture_all_snapshots():
@@ -783,10 +698,8 @@ async def _capture_all_snapshots():
             except Exception:
                 logger.exception("snapshot capture failed for %s/%s", m["id"], src)
 
-
 @api.post("/cron/capture-snapshot")
 async def cron_capture_snapshot(background: BackgroundTasks, authorization: str = Header(None), x_webhook_id: str = Header(None)):
-    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="unauthorized")
     token = authorization.split(" ", 1)[1]
@@ -795,7 +708,6 @@ async def cron_capture_snapshot(background: BackgroundTasks, authorization: str 
     background.add_task(_capture_all_snapshots)
     return {"ok": True, "accepted": True, "runId": x_webhook_id}
 
-# Register location/discovery and vendor-stall routes exactly once.
 location_router = location_routes.build_router(db)
 api.include_router(location_router)
 
@@ -804,13 +716,10 @@ api.include_router(stall_router)
 
 app.include_router(api)
 
-# In production, set CORS_ORIGINS to the exact frontend origin(s),
-# comma-separated. Wildcard + credentials is intentionally avoided.
 _raw_cors = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173")
 _cors_origins = [origin.strip().rstrip("/") for origin in _raw_cors.split(",") if origin.strip()]
 _cors_wildcard = "*" in _cors_origins
 
-# Warn if CORS is still set to localhost defaults in a non-local environment.
 if all("localhost" in o or "127.0.0.1" in o for o in _cors_origins):
     logger.warning(
         "CORS_ORIGINS is set to localhost only (%s). "
