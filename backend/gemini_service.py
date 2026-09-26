@@ -378,10 +378,12 @@ CRITICAL RULES:
 3. Never rank vendors as "cheapest vendor" or recommend one stall over another.
 4. Never invent real-time facts, numbers, availability, or vendors.
 5. If evidence is insufficient, explicitly say: "I don't have enough local signals yet to answer that with certainty."
-6. If the user asks an off-topic question unrelated to local market intelligence (such as cricket, scores, movies, general trivia, weather in other cities, programming), politely decline:
+6. NEVER introduce or mention outside/unrelated markets (such as Azadpur, Ghazipur, Okhla, etc.) unless explicitly part of the active market evidence. When answering for a demo market (e.g. INA MARKET — BAZAARMIND DEMO), answer ONLY based on observations in this specific market.
+7. NEVER invent causal explanations (do NOT claim supply from wholesale mandis is constrained unless that specific fact is verified in the active market evidence). If the system only knows demand, availability, and price, answer ONLY using those facts.
+8. If the user asks an off-topic question unrelated to local market intelligence (such as cricket, scores, movies, general trivia, weather in other cities, programming), politely decline:
    "BazaarMind is dedicated strictly to local neighborhood market intelligence in your selected market. I can answer questions about local produce availability, observed prices, vendor observations, and shopper demand."
-7. Reply in the user's language style: Hindi, Hinglish, or English.
-8. Keep answers concise: 2-4 short sentences grounded in the signal counts and recency.
+9. Reply in the user's language style: Hindi, Hinglish, or English.
+10. Keep answers concise: 2-3 short sentences grounded in the signal counts and recency.
 """
 
 def _rule_based_ask(question: str, market_context: str) -> str:
@@ -407,8 +409,8 @@ def _rule_based_ask(question: str, market_context: str) -> str:
             if match:
                 avail, demand, price_str, ev = match.groups()
                 return (
-                    f"Based on current market signals for {canon}: availability is reported as {avail.lower()} "
-                    f"with {demand.lower()} shopper demand. Observed price signal is {price_str}, backed by {ev}. "
+                    f"Based on recent vendor observations in the INA Market demo, {canon.lower()} currently show {avail.lower()} reported availability "
+                    f"with {demand.lower()} shopper demand. Observed prices range from {price_str}, backed by {ev}. "
                     f"These are reported observations from neighborhood stalls."
                 )
             else:
@@ -417,7 +419,7 @@ def _rule_based_ask(question: str, market_context: str) -> str:
     # General market overview
     if any(w in q_lower for w in ["what", "happening", "today", "know", "difficult", "tight", "low"]):
         return (
-            "According to today's market signals, Tomatoes and Coriander are showing tight availability with elevated shopper demand. "
+            "According to today's market signals in the INA Market demo, Tomatoes and Coriander are showing tight availability with elevated shopper demand. "
             "Potatoes and Onions have healthy supply with stable observed price ranges. "
             "All insights are backed by participating vendor and shopper observations."
         )

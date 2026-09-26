@@ -5,8 +5,15 @@ import sys
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent
-backend_dir = ROOT_DIR / "backend" if (ROOT_DIR / "backend").exists() else ROOT_DIR.parent / "backend"
-if str(backend_dir) not in sys.path:
-    sys.path.insert(0, str(backend_dir))
+candidates = [
+    ROOT_DIR / "backend",
+    ROOT_DIR.parent / "backend",
+    Path.cwd() / "backend",
+    Path.cwd(),
+]
+for p in candidates:
+    if p.exists() and str(p) not in sys.path:
+        sys.path.insert(0, str(p))
 
 from server import app
+

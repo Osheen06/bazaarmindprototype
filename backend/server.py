@@ -71,6 +71,14 @@ async def lifespan(app):
     except Exception:
         pass
 
+    try:
+        await db.market_signals.create_index([("marketId", 1), ("status", 1), ("createdAt", -1)])
+        await db.market_signals.create_index([("marketId", 1), ("dataSource", 1), ("status", 1)])
+        await db.market_signals.create_index([("marketId", 1), ("product", 1), ("status", 1)])
+        await db.markets.create_index([("id", 1)], unique=True)
+    except Exception:
+        pass
+
     await demo_seed.seed_if_empty(db)
 
     logger.info(

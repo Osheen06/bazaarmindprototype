@@ -47,8 +47,10 @@ export default function Landing() {
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }}
             className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#1E2022] leading-[1.05]"
           >
-            The Market That<br />
-            <span className="text-[#1E5631]">Thinks as One.</span>
+            BazaarMind
+            <span className="block text-2xl sm:text-3xl lg:text-3xl text-[#1E5631] font-bold mt-2">
+              The intelligence layer for India's neighborhood markets.
+            </span>
           </motion.h1>
 
           <motion.div
@@ -57,15 +59,14 @@ export default function Landing() {
           >
             <p>Every shopper is a signal.</p>
             <p>Every vendor is a sensor.</p>
-            <p>The market is the network.</p>
-            <p className="text-[#1E5631] font-bold pt-1">Gemini is the interpreter.</p>
+            <p className="text-[#1E5631] font-bold pt-1">BazaarMind connects the information already inside the market.</p>
           </motion.div>
 
           <motion.p
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.16 }}
             className="mt-4 text-xs sm:text-sm text-[#5C6360] leading-relaxed max-w-md"
           >
-            BazaarMind makes information that already exists inside neighborhood markets visible and useful — without asking vendors or shoppers to learn English, databases, or schemas.
+            A shopper knows what they need. A vendor knows what arrived. These signals normally remain scattered across conversations. BazaarMind interprets natural conversations with Google Gemini and aggregates them into a living Market Pulse.
           </motion.p>
 
           <motion.div
@@ -114,7 +115,7 @@ export default function Landing() {
                 Delhi NCR Neighborhood Mandi
               </span>
               <p className="text-sm font-medium mt-1 drop-shadow">
-                Where messy conversations become structured intelligence.
+                Where everyday conversations become structured market intelligence.
               </p>
             </div>
           </div>
@@ -125,38 +126,38 @@ export default function Landing() {
       {/* Pipeline Diagram (How it works) */}
       <section id="how-it-works" className="max-w-6xl mx-auto px-5 md:px-8 py-12 border-t border-[#E5DEC9]">
         <div className="text-center max-w-xl mx-auto mb-10">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#1E5631]">The BazaarMind Pipeline</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#1E5631]">How It Works</span>
           <h2 className="font-display text-2xl md:text-3xl font-bold text-[#1E2022] mt-1">
-            Messy conversations in. Structured intelligence out.
+            From everyday conversations to market intelligence.
           </h2>
           <p className="text-xs text-[#5C6360] mt-2">
-            Google Gemini interprets human inputs. Deterministic backend logic aggregates evidence into a living Market Pulse.
+            Gemini interprets natural human expressions. Deterministic backend logic validates, aggregates, and corroborates signals.
           </p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <PipelineStep
             num="1"
-            title="Human Input"
-            desc="Shoppers express what they need. Vendors describe what they see in Hindi, Hinglish, or English via voice, text, or photos."
-            icon={Mic}
+            title="Shopper Demand"
+            desc='Shopper says: "I need 2 kg tomatoes" → Gemini understands intent → Structured Demand Signal created.'
+            icon={Users}
           />
           <PipelineStep
             num="2"
-            title="Gemini Interpreter"
-            desc="Extracts structured produce, availability, observed price, and quantity without forcing database forms on users."
-            icon={Sparkles}
+            title="Vendor Sensor"
+            desc='Vendor says: "Tomatoes are low today at ₹70" → Gemini extracts observation → Structured Vendor Signal created.'
+            icon={Mic}
           />
           <PipelineStep
             num="3"
-            title="Validation & Aggregation"
-            desc="Deterministic logic checks boundaries, deduplicates signals, tracks independent stall diversity, and computes confidence."
+            title="Deterministic Validation"
+            desc="Backend validates prices, deduplicates entries, tracks independent stall diversity, and persists signals to the database."
             icon={ShieldCheck}
           />
           <PipelineStep
             num="4"
             title="Market Pulse"
-            desc="A living, evidence-grounded view of availability and observed prices for the entire neighborhood."
+            desc="Living intelligence layer: observed price ranges (₹65–₹72/kg), availability, freshness, and traceable evidence."
             icon={Network}
           />
         </div>

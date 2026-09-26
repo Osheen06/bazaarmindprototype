@@ -67,7 +67,7 @@ _SPEC = {
 _VENDOR_TEXTS = {
     "Tomatoes": [
         "Aaj tamatar thoda kam aaya hai aur rate 70 rupaye hai.",
-        "Tomato supply is tight from Azadpur mandi today, selling around 68 to 72.",
+        "Tomato supply is tight today, selling around 68 to 72.",
         "टमाटर आज कम आया है, 65 रुपये किलो चल रहा है।",
         "Stock is finishing fast for tomatoes today.",
     ],
@@ -84,7 +84,7 @@ _VENDOR_TEXTS = {
     "Coriander": [
         "Dhaniya thoda kam hai aaj, 25 ka ek gaddi.",
         "Coriander supply limited due to morning rain.",
-        "धनिया आज बहुत कम आया है मंडी से।",
+        "धनिया आज बहुत कम आया है।",
     ],
     "Lemon": [
         "Nimbu 10 rupaye piece hai aaj.",
@@ -100,7 +100,7 @@ _VENDOR_TEXTS = {
     ],
     "Chilli": [
         "Hari mirch tight hai aaj, rate 90 rupaye.",
-        "Green chillies shortage today at mandi.",
+        "Green chillies shortage today across stalls.",
     ],
     "Ginger": [
         "Adrak 130 rupaye kilo chal raha hai.",

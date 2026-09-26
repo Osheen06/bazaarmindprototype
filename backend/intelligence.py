@@ -219,7 +219,27 @@ async def compute_market_pulse(db, market_id: str, data_source: Optional[str] = 
     if data_source in ("DEMO", "PILOT", "REAL"):
         query["dataSource"] = data_source
 
-    cursor = db.market_signals.find(query).sort("createdAt", -1)
+    projection = {
+        "_id": 0,
+        "id": 1,
+        "marketId": 1,
+        "product": 1,
+        "status": 1,
+        "source": 1,
+        "vendorId": 1,
+        "vendorName": 1,
+        "availability": 1,
+        "demandLevel": 1,
+        "reportedPrice": 1,
+        "priceUnit": 1,
+        "quantity": 1,
+        "rawText": 1,
+        "confidence": 1,
+        "createdAt": 1,
+        "expiresAt": 1,
+        "dataSource": 1,
+    }
+    cursor = db.market_signals.find(query, projection=projection).sort("createdAt", -1)
     signals = await cursor.to_list(5000)
 
     by_product: Dict[str, List[Dict[str, Any]]] = {}

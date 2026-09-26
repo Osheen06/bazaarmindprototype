@@ -141,6 +141,9 @@ async def run_tests():
         print(f"   A: {ans['answer']}")
         print(f"   Signals grounding count: {ans.get('totalSignals')} (vendor: {ans.get('vendorObservations')}, shopper: {ans.get('shopperSignals')})")
         assert ans.get("totalSignals", 0) > 0
+        assert "Azadpur" not in ans["answer"]
+        assert "INA Market" in ans["answer"]
+        print("✓ Verified strict INA Market grounding with zero external market contamination")
 
         # 8. Safe off-topic question refusal
         print("\n[Test 8] Ask BazaarMind (Safe Guardrails)...")

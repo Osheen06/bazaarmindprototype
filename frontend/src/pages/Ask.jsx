@@ -8,11 +8,11 @@ import { TypingDots } from "../components/Loading";
 import { Chip } from "../components/atoms";
 
 const QUESTIONS = [
-  "Why are tomatoes showing tight today?",
+  "What's happening with tomatoes?",
+  "What is running low in the market?",
   "What is the observed price range for onions?",
+  "Do we have enough signals to say tomatoes are scarce?",
   "What are shoppers asking for today?",
-  "What are vendors reporting?",
-  "Who won the cricket match?", // Safe guardrail demo question
 ];
 
 export default function Ask() {
