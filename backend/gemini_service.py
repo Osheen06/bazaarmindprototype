@@ -20,7 +20,7 @@ from google.genai import types
 logger = logging.getLogger(__name__)
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 
 CANONICAL_PRODUCTS = [
     "Tomatoes", "Potatoes", "Onions", "Coriander",
