@@ -162,6 +162,54 @@ export default function Landing() {
           />
         </div>
 
+        {/* Advanced Ground-Truth Innovations Section */}
+        <div className="mt-12 pt-10 border-t border-[#E5DEC9]">
+          <div className="text-center max-w-xl mx-auto mb-8">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1E5631] bg-[#1E5631]/10 px-3 py-1 rounded-full">
+              <Sparkles className="h-3.5 w-3.5" />
+              Advanced Ground-Truth Engine
+            </span>
+            <h3 className="font-display text-2xl font-bold text-[#1E2022] mt-2">
+              Connecting Digital AI to Physical Footsteps
+            </h3>
+            <p className="text-xs text-[#5C6360] mt-1">
+              BazaarMind turns scattered conversations into real-time directions on Google Maps.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-5">
+            <div className="bg-white border border-[#E5DEC9] rounded-2xl p-5 shadow-xs hover:border-[#1E5631]/40 transition-colors">
+              <div className="h-10 w-10 rounded-xl bg-[#EAF4ED] text-[#1E5631] flex items-center justify-center mb-3">
+                <Store className="h-5 w-5" />
+              </div>
+              <h4 className="font-bold text-[#1E2022] text-sm">Google Maps Stall Routing</h4>
+              <p className="text-xs text-[#5C6360] mt-1.5 leading-relaxed">
+                Every vendor stall in INA Market is mapped with precise GPS coordinates. 1-click directions guide shoppers right to the crate.
+              </p>
+            </div>
+
+            <div className="bg-white border border-[#E5DEC9] rounded-2xl p-5 shadow-xs hover:border-[#1E5631]/40 transition-colors">
+              <div className="h-10 w-10 rounded-xl bg-[#EAF4ED] text-[#1E5631] flex items-center justify-center mb-3">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <h4 className="font-bold text-[#1E2022] text-sm">Gemini Smart Route Planner</h4>
+              <p className="text-xs text-[#5C6360] mt-1.5 leading-relaxed">
+                Gemini sequences shopping lists: scarce perishables first before they sell out, minimizing walking distance and calculating total budget.
+              </p>
+            </div>
+
+            <div className="bg-white border border-[#E5DEC9] rounded-2xl p-5 shadow-xs hover:border-[#1E5631]/40 transition-colors">
+              <div className="h-10 w-10 rounded-xl bg-[#EAF4ED] text-[#1E5631] flex items-center justify-center mb-3">
+                <Radio className="h-5 w-5" />
+              </div>
+              <h4 className="font-bold text-[#1E2022] text-sm">Interactive Stall Radar</h4>
+              <p className="text-xs text-[#5C6360] mt-1.5 leading-relaxed">
+                Live spatial radar of the bazaar showing sensor density, walking distance in meters, and instant stock filtering across market lanes.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="mt-10 rounded-2xl bg-[#1E5631] text-white p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md">
           <div>
             <div className="text-xs tracking-wider uppercase opacity-80">Pitch & Demo Ready</div>
@@ -169,7 +217,7 @@ export default function Landing() {
               Experience the INA Market Demonstration
             </h3>
             <p className="text-xs opacity-90 mt-1 max-w-lg">
-              Walk through the 3-minute flow: view the pulse, speak as a vendor, express a shopper need, and query Ask BazaarMind.
+              Walk through the 3-minute flow: view the pulse, speak as a vendor, express a shopper need, test Gemini route planning, and navigate on Google Maps.
             </p>
           </div>
           <button
