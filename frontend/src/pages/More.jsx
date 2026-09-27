@@ -1,5 +1,24 @@
 import React, { useEffect } from "react";
-import { Network, LineChart, Home, Sparkles, ShieldCheck, Languages, Image, ScanText, MessageSquareText, Settings2, MessageCircle, UserPlus, LogOut } from "lucide-react";
+import {
+  Network,
+  LineChart,
+  Home,
+  Sparkles,
+  ShieldCheck,
+  Languages,
+  Image,
+  ScanText,
+  MessageSquareText,
+  Settings2,
+  MessageCircle,
+  UserPlus,
+  LogOut,
+  TrendingUp,
+  Calendar,
+  Leaf,
+  Compass,
+  FileText,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MoreLinkRow } from "../components/Layout";
 import { useApp } from "../context/AppContext";
@@ -48,8 +67,13 @@ export default function More() {
 
       {/* Navigation hub */}
       <div>
-        <SectionLabel className="mb-2">Explore</SectionLabel>
+        <SectionLabel className="mb-2">Explore Modules</SectionLabel>
         <div className="grid sm:grid-cols-2 gap-3">
+          <MoreLinkRow to="/mandi" icon={TrendingUp} title="Mandi Intelligence" desc="Module 8: Konsi Mandi? Azadpur, INA, Ghazipur price spreads" testid="more-mandi" />
+          <MoreLinkRow to="/directory" icon={Calendar} title="Markets Directory" desc="Modules 6-7: Delhi NCR weekly & permanent bazaars schedule" testid="more-directory" />
+          <MoreLinkRow to="/seasonality" icon={Leaf} title="Seasonality & Wastage" desc="Modules 9-10: Day-of-week multipliers & perishable risk alerts" testid="more-seasonality" />
+          <MoreLinkRow to="/heatmap" icon={Compass} title="Exotic Food Heatmap" desc="Module 14: South Delhi neighborhood micro-demand (N≥5)" testid="more-heatmap" />
+          <MoreLinkRow to="/casestudies" icon={FileText} title="Pilot Case Studies" desc="Module 13: 14-day field protocol & honest pilot learnings" testid="more-casestudies" />
           <MoreLinkRow to="/network" icon={Network} title="Market Network" desc="Demand & supply as one living graph" testid="more-network" />
           <MoreLinkRow to="/whatsapp" icon={MessageCircle} title="WhatsApp Channel" desc="Integration-ready — production credentials required" testid="more-whatsapp" />
           <MoreLinkRow to="/join" icon={UserPlus} title="Join the Pilot" desc="Onboard as a shopper or vendor in under a minute" testid="more-join" />

@@ -153,8 +153,8 @@ export function directParseShoppingList(text, marketPulse = DEFAULT_DEMO_PULSE) 
 
 export function directAskBazaar(question, marketPulse = DEFAULT_DEMO_PULSE, dataSource = "DEMO") {
   const products = marketPulse?.products || [];
-  const marketName = marketPulse?.market?.name || "INA MARKET — BAZAARMIND DEMO";
-  const qLower = question.toLowerCase();
+  const marketName = marketPulse?.market?.name || "INA Market · South Delhi";
+  const qLower = (question || "").toLowerCase().trim();
 
   const totalSignals = products.reduce((acc, p) => acc + (p.vendorObservations || 0) + (p.shopperSignals || 0), 0);
   const vendorObservations = products.reduce((acc, p) => acc + (p.vendorObservations || 0), 0);
@@ -172,6 +172,36 @@ export function directAskBazaar(question, marketPulse = DEFAULT_DEMO_PULSE, data
     };
   }
 
+  // Greetings check
+  const greetings = ["hello", "hi", "namaste", "hey", "kem cho", "ram ram", "pranam", "kya haal", "kaise ho"];
+  if (greetings.some((g) => qLower === g || qLower.startsWith(g + " "))) {
+    return {
+      ok: true,
+      answer: `Namaste! I am BazaarMind's evidence assistant for ${marketName}. I answer questions strictly based on local signals reported today. Ask me about any vegetable's availability or observed price (e.g. "Tomatoes ka rate" or "What is tight today?").`,
+      totalSignals,
+      vendorObservations,
+      shopperSignals,
+      freshness: "Active today",
+    };
+  }
+
+  // Match canonical item including Hindi aliases
+  for (const c of CANONICAL_MAP) {
+    if (c.aliases.some((a) => qLower.includes(a))) {
+      const p = products.find((prod) => prod.product.toLowerCase() === c.name.toLowerCase());
+      if (p) {
+        return {
+          ok: true,
+          answer: `At ${marketName} today, ${c.name} (${c.hindi}) shows ${p.availability.toLowerCase()} availability with ${p.demand.toLowerCase()} shopper demand. Observed price range is ${p.reportedPriceSignal || "₹55–₹70/kg"}, based on ${p.vendorObservations || 0} vendor observations and ${p.shopperSignals || 0} shopper signals.`,
+          totalSignals,
+          vendorObservations,
+          shopperSignals,
+          freshness: "Active today",
+        };
+      }
+    }
+  }
+
   for (const p of products) {
     if (qLower.includes(p.product.toLowerCase())) {
       return {
@@ -187,7 +217,7 @@ export function directAskBazaar(question, marketPulse = DEFAULT_DEMO_PULSE, data
 
   return {
     ok: true,
-    answer: `At ${marketName} today, Tomatoes and Coriander are showing tight availability with active shopper requests. Potatoes and Onions have good availability with stable observed prices. All conclusions are grounded strictly in today's local signals.`,
+    answer: `At ${marketName} today, Tomatoes and Coriander are showing tight availability with active shopper requests. Potatoes (₹26–₹34/kg) and Onions (₹48–₹58/kg) have good availability with stable observed prices. All conclusions are grounded strictly in today's local signals.`,
     totalSignals,
     vendorObservations,
     shopperSignals,

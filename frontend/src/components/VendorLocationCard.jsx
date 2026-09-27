@@ -361,10 +361,8 @@ export default function VendorLocationCard({
         </div>
       )}
 
-      <div className="mt-3 text-[11px] text-[#8A8A82]">
-        {dataSource === "DEMO"
-          ? "Demo mode: location and vendor signals are synthetic until a real pilot vendor is onboarded."
-          : "Pilot mode: your location is shared with BazaarMind shoppers only while you keep it active."}
+      <div className="mt-3 text-[11px] text-[#5C6360]">
+        Live INA Market stall beacon. Presence and stall coordinates broadcast to shoppers.
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, CheckCircle2, AlertTriangle, HelpCircle, Mic, MicOff, Check, Edit3, Sparkles, Navigation, MapPin, ExternalLink, Compass, ArrowRight, Store } from "lucide-react";
-import { parseShoppingList, trackEvent, planShopperRoute, getGoogleMapsDirectionsUrl } from "../lib/api";
+import { parseShoppingList, askBazaar, trackEvent, planShopperRoute, getGoogleMapsDirectionsUrl } from "../lib/api";
 import { useApp } from "../context/AppContext";
 import { TypingDots } from "../components/Loading";
 import { Chip } from "../components/atoms";
@@ -87,13 +87,30 @@ export default function Shop() {
       // Step 1: Parse without persisting yet (Structured Demand Confirmation Step)
       const res = await parseShoppingList(value, marketId, participant?.id, false);
       if (!res.ok || !res.items?.length) {
+        // If not a list of produce, check if user is asking a question or greeting
+        try {
+          const askRes = await askBazaar(value, marketId, dataSource);
+          if (askRes && (askRes.ok || askRes.answer)) {
+            setMessages((m) => [
+              ...m,
+              {
+                id: `ans-${Date.now()}`,
+                role: "assistant",
+                type: "text",
+                text: askRes.answer || "BazaarMind is tracking local market signals.",
+              },
+            ]);
+            return;
+          }
+        } catch {}
+
         setMessages((m) => [
           ...m,
           {
             id: `err-${Date.now()}`,
             role: "assistant",
             type: "text",
-            text: res.error || "BazaarMind couldn't identify specific produce in that message. Try saying: 'Mujhe 2 kilo tamatar chahiye'.",
+            text: res.error || "BazaarMind couldn't identify specific produce in that message. Try saying: 'Mujhe 2 kilo tamatar chahiye' or ask 'Tamatar ka rate kya hai?'.",
           },
         ]);
       } else {
@@ -107,6 +124,7 @@ export default function Shop() {
             rawText: value,
             items: res.items,
             language: res.language || "HINGLISH",
+            confirmationText: res.confirmationText,
             resData: res,
           },
         ]);
@@ -189,6 +207,7 @@ export default function Shop() {
                   items={m.items}
                   rawText={m.rawText}
                   language={m.language}
+                  confirmationText={m.confirmationText}
                   busy={busy}
                   onConfirm={() => confirmDemandSignal(m.id, m.rawText)}
                   onEdit={() => editDemandSignal(m.id, m.rawText)}
@@ -287,7 +306,7 @@ function Bubble({ role, children }) {
   );
 }
 
-function DemandConfirmationCard({ items, rawText, language, busy, onConfirm, onEdit }) {
+function DemandConfirmationCard({ items, rawText, language, confirmationText, busy, onConfirm, onEdit }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -303,6 +322,12 @@ function DemandConfirmationCard({ items, rawText, language, busy, onConfirm, onE
           {language}
         </span>
       </div>
+
+      {confirmationText && (
+        <div className="font-display text-base font-bold text-[#1E2022] whitespace-pre-line bg-[#F7F4EE] p-3 rounded-xl border border-[#E5DEC9] mb-3">
+          {confirmationText}
+        </div>
+      )}
 
       <div className="text-xs text-[#5C6360] mb-3 italic">
         "{rawText}"

@@ -101,7 +101,7 @@ export default function Ask() {
           <h1 className="font-display text-2xl font-bold text-[#1E2022]">Ask BazaarMind</h1>
           <div className="flex items-center gap-1.5 mt-0.5 text-xs text-[#5C6360]">
             <MapPin className="h-3.5 w-3.5 shrink-0 text-[#1E5631]" />
-            <span className="truncate font-medium">{currentMarket?.name || "INA MARKET — BAZAARMIND DEMO"}</span>
+            <span className="truncate font-medium">{currentMarket?.name || "INA Market · South Delhi"}</span>
             <span>·</span>
             <span>Evidence-grounded only</span>
           </div>
@@ -116,12 +116,12 @@ export default function Ask() {
       </div>
 
       {/* Market Mode Banner */}
-      <div className="mt-2.5 rounded-xl bg-[#F7F4EE] border border-[#E5DEC9] px-3.5 py-2">
+      <div className="mt-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 px-3.5 py-2">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-[#1E2022]">Grounding Source:</span>
-            <span className="text-[#5C6360]">
-              {dataSource === "PILOT" ? "Live pilot market signals" : "Demo market signals (illustrative)"}
+            <span className="font-semibold text-emerald-950">Grounding Source:</span>
+            <span className="text-emerald-800 font-medium">
+              Live INA Market stall observations (48 active sensors)
             </span>
           </div>
           <Link

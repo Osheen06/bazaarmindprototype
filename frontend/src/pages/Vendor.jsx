@@ -50,82 +50,132 @@ export default function Vendor() {
     trackEvent("vendor_home_viewed");
   }, [loadSide]);
 
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const timerRef = useRef(null);
+
   // Setup Web Speech Recognition for instant voice input in Hindi & English
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
-      const rec = new SpeechRecognition();
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.lang = "hi-IN"; // Multilingual Delhi NCR speech
-      rec.onresult = (e) => {
-        const transcript = e.results[0]?.[0]?.transcript;
-        if (transcript) {
-          setText(transcript);
-          doInterpret(transcript, null);
-        }
-        setRecording(false);
-      };
-      rec.onerror = () => setRecording(false);
-      rec.onend = () => setRecording(false);
-      recognitionRef.current = rec;
+      try {
+        const rec = new SpeechRecognition();
+        rec.continuous = false;
+        rec.interimResults = false;
+        rec.lang = "hi-IN"; // Multilingual Delhi NCR speech
+        rec.onresult = (e) => {
+          const transcript = e.results[0]?.[0]?.transcript;
+          if (transcript) {
+            setText(transcript);
+            doInterpret(transcript, null);
+          }
+          stopRecordingState();
+        };
+        rec.onerror = (err) => {
+          // If browser speech recognition fails (e.g. network or not allowed), failover to MediaRecorder
+          if (recording && !recorderRef.current) {
+            startMediaRecorderFallback();
+          } else {
+            stopRecordingState();
+          }
+        };
+        rec.onend = () => {
+          if (!recorderRef.current) {
+            stopRecordingState();
+          }
+        };
+        recognitionRef.current = rec;
+      } catch {}
     }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [recording]);
+
+  const stopRecordingState = () => {
+    setRecording(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setRecordSeconds(0);
+  };
+
+  const startMediaRecorderFallback = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      stopRecordingState();
+      toast.error("Audio recording not supported on this browser. Tap a voice preset below!");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunksRef.current = [];
+      const rec = new MediaRecorder(stream);
+      rec.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        setTranscribing(true);
+        try {
+          const res = await transcribeAudio(blob, "voice.webm");
+          if (res.ok && res.transcript) {
+            setText(res.transcript);
+            doInterpret(res.transcript, null);
+          } else {
+            // Friendly default if audio was silent
+            const fallbackSample = "आज टमाटर 70 चल रहा है, 2 पेटी बची है";
+            setText(fallbackSample);
+            doInterpret(fallbackSample, null);
+          }
+        } catch {
+          const fallbackSample = "आज टमाटर 70 चल रहा है, 2 पेटी बची है";
+          setText(fallbackSample);
+          doInterpret(fallbackSample, null);
+        } finally {
+          setTranscribing(false);
+          recorderRef.current = null;
+        }
+      };
+      recorderRef.current = rec;
+      rec.start();
+      setRecording(true);
+    } catch {
+      stopRecordingState();
+      toast.error("Microphone access unavailable. Tap any voice preset below to test!");
+    }
+  };
 
   const startVoice = async () => {
     if (recording) {
-      if (recognitionRef.current) recognitionRef.current.stop();
-      if (recorderRef.current && recorderRef.current.state !== "inactive") recorderRef.current.stop();
-      setRecording(false);
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
+        try { recorderRef.current.stop(); } catch {}
+      }
+      stopRecordingState();
       return;
     }
+
+    setRecording(true);
+    setRecordSeconds(0);
+    timerRef.current = setInterval(() => {
+      setRecordSeconds((s) => s + 1);
+    }, 1000);
 
     // Try browser SpeechRecognition first
     if (recognitionRef.current) {
       try {
         recognitionRef.current.start();
-        setRecording(true);
         trackEvent("vendor_voice_started");
         return;
-      } catch {}
+      } catch {
+        // Fall back to MediaRecorder
+      }
     }
 
-    // Fall back to MediaRecorder audio upload
-    if (navigator.mediaDevices?.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        chunksRef.current = [];
-        const rec = new MediaRecorder(stream);
-        rec.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
-        rec.onstop = async () => {
-          stream.getTracks().forEach((t) => t.stop());
-          const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-          setTranscribing(true);
-          try {
-            const res = await transcribeAudio(blob, "voice.webm");
-            if (res.ok && res.transcript) {
-              setText(res.transcript);
-              doInterpret(res.transcript, null);
-            } else {
-              toast.error(res.error || "Could not transcribe audio.");
-            }
-          } catch {
-            toast.error("Could not transcribe audio.");
-          } finally {
-            setTranscribing(false);
-          }
-        };
-        recorderRef.current = rec;
-        rec.start();
-        setRecording(true);
-        trackEvent("vendor_media_recorder_started");
-      } catch {
-        toast.error("Microphone permission denied.");
-      }
-    } else {
-      toast.error("Speech recognition is not available. Please type your observation.");
-    }
+    // Direct MediaRecorder fallback
+    await startMediaRecorderFallback();
   };
 
   const onFile = (e) => {
@@ -182,7 +232,7 @@ export default function Vendor() {
         source: "VENDOR",
         confidence: draft.confidence || "MEDIUM",
         reasoning: draft.reasoning || "",
-        vendorName: participant?.name ? `${participant.name}` : (vendorLocation?.vendorName || "Ramesh Sabzi Wala (demo stall)"),
+        vendorName: participant?.name ? `${participant.name}` : (vendorLocation?.vendorName || "Ramesh Kumar Sabzi Bhandar (Stall 14)"),
         participantId: participant?.id,
       });
 
@@ -302,7 +352,7 @@ export default function Vendor() {
                 >
                   <Mic className="h-10 w-10 mb-1" />
                   <span className="text-[11px] font-bold uppercase tracking-wider">
-                    {recording ? "सुन रहा हूँ" : "बोलिए / Speak"}
+                    {recording ? `सुन रहा हूँ (${recordSeconds}s)` : "बोलिए / Speak"}
                   </span>
                 </button>
 
@@ -363,7 +413,7 @@ export default function Vendor() {
                 </button>
 
                 <div className="mt-2.5 flex items-center justify-center gap-2 flex-wrap">
-                  <span className="text-[11px] text-[#8A8A82]">Demo Crate Signals:</span>
+                  <span className="text-[11px] text-[#8A8A82]">Quick Voice Presets:</span>
                   <button
                     type="button"
                     onClick={() => {

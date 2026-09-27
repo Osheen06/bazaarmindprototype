@@ -36,8 +36,8 @@ async def run_tests():
         assert isinstance(markets, list) and len(markets) > 0
         demo_market = next((m for m in markets if m["id"] == "demo-ina"), None)
         assert demo_market is not None
-        assert "INA MARKET — BAZAARMIND DEMO" in demo_market["name"]
-        print(f"✓ Found demo market: {demo_market['name']} ({demo_market['id']})")
+        assert "INA Market" in demo_market["name"]
+        print(f"✓ Found market: {demo_market['name']} ({demo_market['id']})")
 
         # 3. Market Pulse
         print("\n[Test 3] Market Pulse...")
@@ -173,6 +173,32 @@ async def run_tests():
         pulse_after = res.json()
         assert pulse_after["ok"] is True
         print(f"✓ Pulse verified after reset. Total products tracked: {len(pulse_after['products'])}")
+
+        # 10. Vendor Working Capital Loans Overview
+        print("\n[Test 10] Vendor Working Capital Loans Overview...")
+        res = await client.get("/api/vendor-loans/overview?marketId=demo-ina")
+        assert res.status_code == 200
+        loans_overview = res.json()
+        assert loans_overview["ok"] is True
+        assert len(loans_overview["vendors"]) > 0
+        assert loans_overview["totalCreditDisbursed"] > 0
+        print(f"✓ Vendor loan overview verified: {len(loans_overview['vendors'])} eligible vendors, {loans_overview['repaymentRate']}% repayment rate")
+
+        # 11. Vendor Working Capital Loan Application
+        print("\n[Test 11] Vendor Working Capital Instant Disbursement...")
+        res = await client.post("/api/vendor-loans/apply", json={
+            "vendorId": "v1",
+            "amount": 10000,
+            "tenureDays": 30,
+            "upiId": "ramesh.sabzi@okhdfcbank"
+        })
+        assert res.status_code == 200
+        loan_app = res.json()
+        assert loan_app["ok"] is True
+        assert loan_app["status"] == "DISBURSED"
+        assert "UTR" in loan_app["utrNumber"]
+        assert loan_app["dailyDeduction"] > 0
+        print(f"✓ Loan approved & disbursed: UTR={loan_app['utrNumber']}, daily={loan_app['dailyDeduction']}/day")
 
     print("\n==================================================")
     print("       ALL E2E INTEGRATION TESTS PASSED!          ")

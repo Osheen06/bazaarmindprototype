@@ -10,15 +10,14 @@ import {
 } from "framer-motion";
 import {
   Activity,
-  MessageSquare,
+  ShoppingBag,
   Store,
   Sparkles,
-  Grid3x3,
   Network,
-  LineChart,
-  Settings,
+  Banknote,
   Radio,
   ChevronRight,
+  TrendingUp,
 } from "lucide-react";
 
 import LocationMarketPicker from "./LocationMarketPicker";
@@ -34,7 +33,7 @@ const MOBILE_NAV = [
   {
     to: "/shop",
     label: "Shop",
-    icon: MessageSquare,
+    icon: ShoppingBag,
     testid: "nav-item-shop",
   },
   {
@@ -44,16 +43,16 @@ const MOBILE_NAV = [
     testid: "nav-item-vendor",
   },
   {
-    to: "/ask",
-    label: "Ask",
-    icon: Sparkles,
-    testid: "nav-item-ask",
+    to: "/mandi",
+    label: "Mandi",
+    icon: TrendingUp,
+    testid: "nav-item-mandi",
   },
   {
-    to: "/more",
-    label: "More",
-    icon: Grid3x3,
-    testid: "nav-item-more",
+    to: "/loans",
+    label: "Loans",
+    icon: Banknote,
+    testid: "nav-item-loans",
   },
 ];
 
@@ -65,22 +64,28 @@ const SIDEBAR_NAV = [
     testid: "side-pulse",
   },
   {
-    to: "/network",
-    label: "Market Network",
-    icon: Network,
-    testid: "side-network",
-  },
-  {
     to: "/shop",
-    label: "Shopper",
-    icon: MessageSquare,
+    label: "Shopper Assistant",
+    icon: ShoppingBag,
     testid: "side-shop",
   },
   {
     to: "/vendor",
-    label: "Vendor",
+    label: "Vendor Sensor",
     icon: Store,
     testid: "side-vendor",
+  },
+  {
+    to: "/mandi",
+    label: "Mandi Arbitrage",
+    icon: TrendingUp,
+    testid: "side-mandi",
+  },
+  {
+    to: "/loans",
+    label: "Vendor Capital",
+    icon: Banknote,
+    testid: "side-loans",
   },
   {
     to: "/ask",
@@ -88,47 +93,21 @@ const SIDEBAR_NAV = [
     icon: Sparkles,
     testid: "side-ask",
   },
-  {
-    to: "/business",
-    label: "Pilot & Business",
-    icon: LineChart,
-    testid: "side-business",
-  },
-  {
-    to: "/more",
-    label: "Settings",
-    icon: Settings,
-    testid: "side-settings",
-  },
 ];
 
-function DemoModeBadge() {
-  const { dataSource } = useApp();
-
-  const isPilot =
-    dataSource === "PILOT";
-
+function LiveMarketBadge() {
   return (
     <div
       className="flex items-center gap-2"
-      data-testid="demo-mode-indicator"
+      data-testid="live-market-indicator"
     >
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1E5631]/8 border border-[#1E5631]/20 px-2.5 py-1 text-[11px] font-semibold text-[#1E5631]">
-        <Radio className="h-3 w-3" />
-        LIVE GEMINI
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-1 text-[11px] font-bold text-emerald-800 shadow-2xs">
+        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+        LIVE INA BAZAAR
       </span>
 
-      <span
-        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold border ${
-          isPilot
-            ? "bg-[#1E5631]/8 border-[#1E5631]/20 text-[#1E5631]"
-            : "bg-[#D96B27]/10 border-[#D96B27]/25 text-[#B4571E]"
-        }`}
-        data-testid="data-source-badge"
-      >
-        {isPilot
-          ? "PILOT DATA"
-          : "DEMO MODE · Synthetic signals"}
+      <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#1E5631]/8 border border-[#1E5631]/20 px-2.5 py-1 text-[11px] font-semibold text-[#1E5631]">
+        48 ACTIVE SENSORS
       </span>
     </div>
   );
@@ -172,7 +151,7 @@ export default function Layout({ children }) {
             DESKTOP SIDEBAR
         ====================================================== */}
 
-        <aside className="hidden md:flex flex-col w-64 bg-[#F7F4EE] border-r border-[#E5DEC9] min-h-screen p-4 sticky top-0 h-screen">
+        <aside className="hidden md:flex flex-col w-64 bg-[#F7F4EE] border-r border-[#E5DEC9] min-h-screen p-4 sticky top-0 h-screen overflow-y-auto">
 
           <button
             onClick={() => navigate("/")}
@@ -212,12 +191,12 @@ export default function Layout({ children }) {
             <div className="rounded-xl bg-white border border-[#E5DEC9] px-3 py-2.5">
               <div className="font-semibold text-sm text-[#1E2022]">
                 {currentMarket?.name ||
-                  "INA MARKET — BAZAARMIND DEMO"}
+                  "INA Market · South Delhi"}
               </div>
 
               <div className="text-[11px] text-[#8A8A82]">
                 {currentMarket?.area ||
-                  "Delhi NCR"}
+                  "Aurobindo Marg · 48 Active Sensors"}
               </div>
             </div>
           </div>
@@ -247,12 +226,12 @@ export default function Layout({ children }) {
               <div className="hidden md:block min-w-0">
                 <div className="font-display font-semibold text-[#1E2022] truncate">
                   {currentMarket?.name ||
-                    "INA MARKET — BAZAARMIND DEMO"}
+                    "INA Market · South Delhi"}
                 </div>
 
                 <div className="text-[11px] text-[#5C6360] truncate">
                   {currentMarket?.area ||
-                    "Delhi NCR"}
+                    "South Delhi · Live Sensor Network"}
                 </div>
               </div>
 
@@ -260,7 +239,7 @@ export default function Layout({ children }) {
 
               <div className="flex items-center gap-2 ml-auto">
                 <LocationMarketPicker />
-                <DemoModeBadge />
+                <LiveMarketBadge />
               </div>
             </div>
           </header>

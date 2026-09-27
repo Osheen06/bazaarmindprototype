@@ -11,10 +11,8 @@ import MarketNetwork from "./pages/MarketNetwork";
 import Shop from "./pages/Shop";
 import Vendor from "./pages/Vendor";
 import Ask from "./pages/Ask";
-import PilotBusiness from "./pages/PilotBusiness";
-import PilotOnboard from "./pages/PilotOnboard";
-import WhatsAppChannel from "./pages/WhatsAppChannel";
-import More from "./pages/More";
+import MandiIntelligence from "./pages/MandiIntelligence";
+import VendorLoan from "./pages/VendorLoan";
 
 const withShell = (el) => <Layout>{el}</Layout>;
 
@@ -31,10 +29,16 @@ export default function App() {
             <Route path="/shop" element={withShell(<Shop />)} />
             <Route path="/vendor" element={withShell(<Vendor />)} />
             <Route path="/ask" element={withShell(<Ask />)} />
-            <Route path="/business" element={withShell(<PilotBusiness />)} />
-            <Route path="/whatsapp" element={withShell(<WhatsAppChannel />)} />
-            <Route path="/join" element={withShell(<PilotOnboard />)} />
-            <Route path="/more" element={withShell(<More />)} />
+            <Route path="/mandi" element={withShell(<MandiIntelligence />)} />
+            <Route path="/loans" element={withShell(<VendorLoan />)} />
+            <Route path="/business" element={withShell(<VendorLoan />)} />
+            <Route path="/more" element={withShell(<VendorLoan />)} />
+            <Route path="/directory" element={withShell(<MandiIntelligence />)} />
+            <Route path="/seasonality" element={withShell(<MarketPulse />)} />
+            <Route path="/heatmap" element={withShell(<MarketPulse />)} />
+            <Route path="/casestudies" element={withShell(<MarketPulse />)} />
+            <Route path="/whatsapp" element={withShell(<Vendor />)} />
+            <Route path="/join" element={withShell(<Vendor />)} />
           </Routes>
           <Toaster position="top-center" richColors />
         </BrowserRouter>

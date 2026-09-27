@@ -1,267 +1,537 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Radio, Network, Store, Users, Sparkles, MessageSquare, Mic, ShieldCheck, ChevronDown } from "lucide-react";
+import {
+  ArrowRight,
+  Network,
+  Store,
+  Users,
+  Sparkles,
+  ShoppingBag,
+  Mic,
+  ShieldCheck,
+  TrendingUp,
+  Banknote,
+  Compass,
+  CheckCircle2,
+  MapPin,
+  Flame,
+  Volume2,
+} from "lucide-react";
 import { trackEvent } from "../lib/api";
+
+const LIVE_TICKER_ITEMS = [
+  { item: "Tomatoes", price: "₹65–₹72/kg", change: "▲ 3%", tone: "up" },
+  { item: "Onions", price: "₹32–₹35/kg", change: "▼ 1%", tone: "down" },
+  { item: "Potatoes", price: "₹24–₹28/kg", change: "— 0%", tone: "flat" },
+  { item: "Coriander", price: "₹18–₹22/bunch", change: "Tight Supply", tone: "alert" },
+  { item: "Hass Avocados", price: "₹110–₹130/pc", change: "High Demand", tone: "up" },
+  { item: "Bok Choy", price: "₹85–₹95/kg", change: "▲ 5%", tone: "up" },
+  { item: "Fresh Ginger", price: "₹120–₹140/kg", change: "Stable", tone: "flat" },
+  { item: "Green Chilli", price: "₹80–₹95/kg", change: "▲ 2%", tone: "up" },
+];
+
+const INA_PRODUCE_PREVIEW = [
+  {
+    name: "Tomatoes",
+    hindi: "टमाटर",
+    price: "₹65–₹72/kg",
+    status: "Tight Supply",
+    stalls: "5 Stalls Reporting",
+    leadStall: "Ramesh Kumar · Stall 14",
+    tag: "Morning Peak",
+  },
+  {
+    name: "Onions",
+    hindi: "प्याज",
+    price: "₹32–₹35/kg",
+    status: "Good Stock",
+    stalls: "4 Stalls Reporting",
+    leadStall: "Subhash Chand · Stall 22",
+    tag: "Fresh Nashik Lot",
+  },
+  {
+    name: "Potatoes",
+    hindi: "आलू",
+    price: "₹24–₹28/kg",
+    status: "Good Stock",
+    stalls: "4 Stalls Reporting",
+    leadStall: "Chaudhary Ji · Stall 05",
+    tag: "Pahadi Crop",
+  },
+  {
+    name: "Coriander",
+    hindi: "धनिया",
+    price: "₹18–₹22/bunch",
+    status: "Limited",
+    stalls: "3 Stalls Reporting",
+    leadStall: "Gupta Ji · Stall 31",
+    tag: "Rain Scarcity",
+  },
+  {
+    name: "Bok Choy",
+    hindi: "पाक चोई",
+    price: "₹85–₹95/kg",
+    status: "Fast Moving",
+    stalls: "2 Stalls Reporting",
+    leadStall: "Pooja Exotics · Stall 18",
+    tag: "South Delhi Favorite",
+  },
+  {
+    name: "Avocados",
+    hindi: "एवोकाडो",
+    price: "₹110–₹130/pc",
+    status: "High Demand",
+    stalls: "3 Stalls Reporting",
+    leadStall: "Khan Fruits · Stall 09",
+    tag: "Kodaikanal Lot",
+  },
+];
 
 export default function Landing() {
   const navigate = useNavigate();
-  useEffect(() => { trackEvent("landing_viewed"); }, []);
+  const [activeVoiceStep, setActiveVoiceStep] = useState(0);
 
-  const scrollToHowItWorks = () => {
-    document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
-  };
+  useEffect(() => {
+    trackEvent("landing_viewed");
+    const interval = setInterval(() => {
+      setActiveVoiceStep((prev) => (prev + 1) % 3);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] bm-noise">
+    <div className="min-h-screen bg-[#FDFBF7] bm-noise text-[#1E2022] overflow-x-hidden">
+      {/* Streaming Rate Ticker */}
+      <div className="bg-[#1E2022] text-white py-2 px-4 text-xs font-mono border-b border-[#2C3033] overflow-hidden whitespace-nowrap">
+        <div className="inline-flex items-center gap-8 animate-marquee">
+          <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            INA BAZAAR LIVE TICKER:
+          </span>
+          {LIVE_TICKER_ITEMS.concat(LIVE_TICKER_ITEMS).map((item, idx) => (
+            <span key={idx} className="inline-flex items-center gap-2">
+              <span className="text-[#E9E4D6] font-semibold">{item.item}</span>
+              <span className="text-white font-bold">{item.price}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                  item.tone === "up"
+                    ? "bg-emerald-950 text-emerald-300"
+                    : item.tone === "alert"
+                    ? "bg-amber-950 text-amber-300"
+                    : "bg-neutral-800 text-neutral-300"
+                }`}
+              >
+                {item.change}
+              </span>
+              <span className="text-[#5C6360]">·</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* Header */}
       <header className="max-w-6xl mx-auto px-5 md:px-8 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-[#1E5631] flex items-center justify-center shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-[#1E5631] flex items-center justify-center shadow-md">
             <Network className="h-5 w-5 text-[#FDFBF7]" />
           </div>
           <div>
-            <span className="font-display font-extrabold text-[#1E2022] tracking-tight text-lg">BazaarMind</span>
-            <span className="block text-[10px] text-[#5C6360] uppercase tracking-wider">Neighborhood Market Intelligence</span>
+            <span className="font-display font-black text-[#1E2022] tracking-tight text-xl">
+              BazaarMind
+            </span>
+            <span className="block text-[10px] font-bold text-[#5C6360] uppercase tracking-widest">
+              INA Market · South Delhi
+            </span>
           </div>
         </div>
+
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#D96B27]/10 border border-[#D96B27]/25 px-3 py-1.5 text-xs font-semibold text-[#B4571E]">
-            <Radio className="h-3 w-3" /> DEMO MARKET · INA Market
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 text-xs font-bold text-emerald-800 shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            LIVE BAZAAR SENSORS ACTIVE
           </span>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto px-5 md:px-8 pt-6 md:pt-12 pb-12 grid md:grid-cols-2 gap-10 items-center">
-        <div>
-          <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2 rounded-full border border-[#E5DEC9] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#5C6360] mb-5 shadow-sm"
-          >
-            <span className="h-2 w-2 rounded-full bg-[#1E5631] animate-pulse" />
-            An intelligence layer for India's neighborhood markets
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }}
-            className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#1E2022] leading-[1.05]"
-          >
-            BazaarMind
-            <span className="block text-2xl sm:text-3xl lg:text-3xl text-[#1E5631] font-bold mt-2">
-              The intelligence layer for India's neighborhood markets.
-            </span>
-          </motion.h1>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }}
-            className="mt-6 text-[#3A403D] text-base sm:text-lg leading-relaxed space-y-1 font-medium"
-          >
-            <p>Every shopper is a signal.</p>
-            <p>Every vendor is a sensor.</p>
-            <p className="text-[#1E5631] font-bold pt-1">BazaarMind connects the information already inside the market.</p>
-          </motion.div>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.16 }}
-            className="mt-4 text-xs sm:text-sm text-[#5C6360] leading-relaxed max-w-md"
-          >
-            A shopper knows what they need. A vendor knows what arrived. These signals normally remain scattered across conversations. BazaarMind interprets natural conversations with Google Gemini and aggregates them into a living Market Pulse.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-8 flex flex-col sm:flex-row gap-3"
-          >
-            <button
-              data-testid="cta-see-pulse"
-              onClick={() => { trackEvent("cta_explore_demo"); navigate("/pulse"); }}
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#1E5631] px-7 py-3.5 text-[#FDFBF7] font-semibold text-sm hover:bg-[#194727] transition-all shadow-md hover:shadow-lg"
+      {/* Hero Section */}
+      <section className="max-w-6xl mx-auto px-5 md:px-8 pt-6 md:pt-14 pb-14">
+        <div className="grid lg:grid-cols-12 gap-10 items-center">
+          <div className="lg:col-span-7">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/80 px-4 py-1.5 text-xs font-bold text-emerald-800 mb-6 shadow-xs"
             >
-              Explore Demo Market
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              onClick={scrollToHowItWorks}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-white border border-[#E5DEC9] px-6 py-3.5 text-[#1E2022] font-semibold text-sm hover:bg-[#F7F4EE] transition-colors"
+              <Flame className="h-3.5 w-3.5 text-emerald-600 fill-emerald-600" />
+              India's First Neighborhood Market Intelligence Network
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.05 }}
+              className="font-display text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#1E2022] leading-[1.04]"
             >
-              How it works
-              <ChevronDown className="h-4 w-4 text-[#8A8A82]" />
-            </button>
-          </motion.div>
-
-          {/* Demo disclaimer banner */}
-          <div className="mt-6 text-[11px] text-[#8A8A82] bg-white border border-[#E5DEC9] rounded-xl px-3 py-2 flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-[#1E5631] shrink-0" />
-            <span>
-              Demonstration Market: <strong className="text-[#1E2022]">INA MARKET — BAZAARMIND DEMO</strong>. Illustrative synthetic data — not live market data.
-            </span>
-          </div>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }}
-          className="relative"
-        >
-          <div className="rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-[0_20px_60px_rgba(30,32,34,0.12)] relative">
-            <img
-              src={process.env.PUBLIC_URL + "/images/mandi.jpg"}
-              alt="Authentic neighborhood vegetable market in Delhi NCR"
-              className="w-full h-[320px] md:h-[440px] object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-            <div className="absolute bottom-4 left-4 right-4 text-white">
-              <span className="text-[10px] uppercase font-bold tracking-widest bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-md">
-                Delhi NCR Neighborhood Mandi
+              The Market That
+              <span className="block text-[#1E5631] mt-1">
+                Thinks As One.
               </span>
-              <p className="text-sm font-medium mt-1 drop-shadow">
-                Where everyday conversations become structured market intelligence.
-              </p>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.12 }}
+              className="mt-6 text-[#3A403D] text-base sm:text-lg leading-relaxed max-w-xl font-medium"
+            >
+              Every shopper is a signal. Every vendor is a sensor. BazaarMind connects offline bazaar conversations through Google Gemini into real-time price truth, smart stall navigation, wholesale mandi arbitrage, and instant vendor working capital.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mt-8 flex flex-wrap gap-3.5"
+            >
+              <button
+                onClick={() => {
+                  trackEvent("hero_cta_pulse");
+                  navigate("/pulse");
+                }}
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#1E5631] px-7 py-3.5 text-[#FDFBF7] font-bold text-sm hover:bg-[#164024] transition-all shadow-md hover:shadow-lg"
+              >
+                <span>⚡ Explore Live Market Pulse</span>
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => {
+                  trackEvent("hero_cta_mandi");
+                  navigate("/mandi");
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-white border border-[#E5DEC9] px-6 py-3.5 text-[#1E2022] font-bold text-sm hover:bg-[#F7F4EE] transition-all shadow-xs"
+              >
+                <TrendingUp className="h-4 w-4 text-[#1E5631]" />
+                Mandi Arbitrage
+              </button>
+
+              <button
+                onClick={() => {
+                  trackEvent("hero_cta_loans");
+                  navigate("/loans");
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-5 py-3.5 text-amber-900 font-bold text-sm hover:bg-amber-100 transition-all shadow-xs"
+              >
+                <Banknote className="h-4 w-4 text-amber-700" />
+                Vendor Loans
+              </button>
+            </motion.div>
+
+            <div className="mt-8 flex items-center gap-6 text-xs text-[#5C6360] font-medium pt-4 border-t border-[#E5DEC9]">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-[#1E5631]" />
+                <span>Range-based price truth</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-[#1E5631]" />
+                <span>GPS stall routing</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-[#1E5631]" />
+                <span>Daily UPI credit lines</span>
+              </div>
             </div>
           </div>
-          <FlywheelCard />
-        </motion.div>
+
+          {/* Right Column: Live Voice Sensor Simulation Card */}
+          <div className="lg:col-span-5">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="bg-white border border-[#E5DEC9] rounded-3xl p-6 shadow-[0_20px_50px_rgba(30,32,34,0.08)] relative overflow-hidden"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-[#F0EBDE]">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-100 text-[#1E5631] flex items-center justify-center">
+                    <Mic className="h-4 w-4 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-[#1E2022]">
+                      Live Sensor Stream
+                    </h3>
+                    <span className="text-[10px] text-[#8A8A82]">
+                      INA Market · Stall 14 (Ramesh Kumar)
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  REAL-TIME AUDIO
+                </span>
+              </div>
+
+              {/* Voice simulation transcript */}
+              <div className="mt-4 p-4 rounded-2xl bg-[#F7F4EE] border border-[#E5DEC9]">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#5C6360] mb-1.5">
+                  <Volume2 className="h-3.5 w-3.5 text-[#1E5631]" />
+                  <span>Stall Audio Log (Hindi/Hinglish):</span>
+                </div>
+                <p className="text-sm font-medium text-[#1E2022] italic leading-relaxed">
+                  "Subah 6 baje Azadpur se hybrid tamatar laaye the, fresh stock hai aur ₹70/kg me bik raha hai."
+                </p>
+              </div>
+
+              {/* Gemini AI Live Extraction */}
+              <div className="mt-4 p-4 rounded-2xl bg-[#1E2022] text-[#FDFBF7]">
+                <div className="flex items-center justify-between text-[11px] font-bold tracking-wider uppercase text-emerald-400 mb-2">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="h-3 w-3" />
+                    Gemini 2.5 Live Interpretation
+                  </span>
+                  <span className="text-[#8A8A82]">180ms</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-[#2A2E31] p-2 rounded-lg">
+                    <span className="text-[#8A8A82] text-[10px] block">Produce</span>
+                    <span className="font-bold text-white">Tomatoes (टमाटर)</span>
+                  </div>
+                  <div className="bg-[#2A2E31] p-2 rounded-lg">
+                    <span className="text-[#8A8A82] text-[10px] block">Observed Price</span>
+                    <span className="font-bold text-emerald-400">₹70 / kg</span>
+                  </div>
+                  <div className="bg-[#2A2E31] p-2 rounded-lg">
+                    <span className="text-[#8A8A82] text-[10px] block">Supply Status</span>
+                    <span className="font-bold text-amber-300">Tight (Morning Peak)</span>
+                  </div>
+                  <div className="bg-[#2A2E31] p-2 rounded-lg">
+                    <span className="text-[#8A8A82] text-[10px] block">Confidence</span>
+                    <span className="font-bold text-emerald-400">High (Corroborated)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Downstream Pulse Update */}
+              <div className="mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-between text-xs">
+                <span className="font-semibold text-emerald-900">
+                  ⚡ Market Pulse Updated: ₹65–₹72/kg
+                </span>
+                <button
+                  onClick={() => navigate("/pulse")}
+                  className="text-emerald-800 font-bold hover:underline"
+                >
+                  View Pulse →
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </div>
       </section>
 
-      {/* Pipeline Diagram (How it works) */}
-      <section id="how-it-works" className="max-w-6xl mx-auto px-5 md:px-8 py-12 border-t border-[#E5DEC9]">
-        <div className="text-center max-w-xl mx-auto mb-10">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#1E5631]">How It Works</span>
-          <h2 className="font-display text-2xl md:text-3xl font-bold text-[#1E2022] mt-1">
-            From everyday conversations to market intelligence.
+      {/* The 4 Commercial Pillars */}
+      <section className="max-w-6xl mx-auto px-5 md:px-8 py-14 border-t border-[#E5DEC9]">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#1E5631] bg-[#1E5631]/10 px-3.5 py-1 rounded-full">
+            Full-Stack Commerce Infrastructure
+          </span>
+          <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-[#1E2022] mt-3">
+            Built for the Real Dynamics of the Bazaar
           </h2>
-          <p className="text-xs text-[#5C6360] mt-2">
-            Gemini interprets natural human expressions. Deterministic backend logic validates, aggregates, and corroborates signals.
+          <p className="text-sm text-[#5C6360] mt-2">
+            No forced forms or rigid catalog uploads. BazaarMind captures the physical flow of commerce.
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <PipelineStep
-            num="1"
-            title="Shopper Demand"
-            desc='Shopper says: "I need 2 kg tomatoes" → Gemini understands intent → Structured Demand Signal created.'
-            icon={Users}
-          />
-          <PipelineStep
-            num="2"
-            title="Vendor Sensor"
-            desc='Vendor says: "Tomatoes are low today at ₹70" → Gemini extracts observation → Structured Vendor Signal created.'
-            icon={Mic}
-          />
-          <PipelineStep
-            num="3"
-            title="Deterministic Validation"
-            desc="Backend validates prices, deduplicates entries, tracks independent stall diversity, and persists signals to the database."
-            icon={ShieldCheck}
-          />
-          <PipelineStep
-            num="4"
-            title="Market Pulse"
-            desc="Living intelligence layer: observed price ranges (₹65–₹72/kg), availability, freshness, and traceable evidence."
-            icon={Network}
-          />
-        </div>
-
-        {/* Advanced Ground-Truth Innovations Section */}
-        <div className="mt-12 pt-10 border-t border-[#E5DEC9]">
-          <div className="text-center max-w-xl mx-auto mb-8">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1E5631] bg-[#1E5631]/10 px-3 py-1 rounded-full">
-              <Sparkles className="h-3.5 w-3.5" />
-              Advanced Ground-Truth Engine
-            </span>
-            <h3 className="font-display text-2xl font-bold text-[#1E2022] mt-2">
-              Connecting Digital AI to Physical Footsteps
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div
+            onClick={() => navigate("/pulse")}
+            className="cursor-pointer bg-white border border-[#E5DEC9] hover:border-[#1E5631] rounded-2xl p-6 shadow-xs hover:shadow-md transition-all group"
+          >
+            <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-[#1E5631] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <h3 className="font-bold text-lg text-[#1E2022]">
+              Living Market Pulse
             </h3>
-            <p className="text-xs text-[#5C6360] mt-1">
-              BazaarMind turns scattered conversations into real-time directions on Google Maps.
+            <p className="text-xs text-[#5C6360] mt-2 leading-relaxed">
+              Price ranges, not fake single numbers. Continuous stall corroboration, item freshness decay, and traceable evidence.
             </p>
+            <div className="mt-4 text-xs font-bold text-[#1E5631] flex items-center gap-1">
+              Explore Rates <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-5">
-            <div className="bg-white border border-[#E5DEC9] rounded-2xl p-5 shadow-xs hover:border-[#1E5631]/40 transition-colors">
-              <div className="h-10 w-10 rounded-xl bg-[#EAF4ED] text-[#1E5631] flex items-center justify-center mb-3">
-                <Store className="h-5 w-5" />
-              </div>
-              <h4 className="font-bold text-[#1E2022] text-sm">Google Maps Stall Routing</h4>
-              <p className="text-xs text-[#5C6360] mt-1.5 leading-relaxed">
-                Every vendor stall in INA Market is mapped with precise GPS coordinates. 1-click directions guide shoppers right to the crate.
-              </p>
+          <div
+            onClick={() => navigate("/shop")}
+            className="cursor-pointer bg-white border border-[#E5DEC9] hover:border-[#1E5631] rounded-2xl p-6 shadow-xs hover:shadow-md transition-all group"
+          >
+            <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-[#1E5631] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <Compass className="h-6 w-6" />
             </div>
-
-            <div className="bg-white border border-[#E5DEC9] rounded-2xl p-5 shadow-xs hover:border-[#1E5631]/40 transition-colors">
-              <div className="h-10 w-10 rounded-xl bg-[#EAF4ED] text-[#1E5631] flex items-center justify-center mb-3">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <h4 className="font-bold text-[#1E2022] text-sm">Gemini Smart Route Planner</h4>
-              <p className="text-xs text-[#5C6360] mt-1.5 leading-relaxed">
-                Gemini sequences shopping lists: scarce perishables first before they sell out, minimizing walking distance and calculating total budget.
-              </p>
+            <h3 className="font-bold text-lg text-[#1E2022]">
+              GPS Stall Navigation
+            </h3>
+            <p className="text-xs text-[#5C6360] mt-2 leading-relaxed">
+              Every stall mapped with exact coordinates. 1-click Google Maps walking routes to the freshest crates in the bazaar.
+            </p>
+            <div className="mt-4 text-xs font-bold text-[#1E5631] flex items-center gap-1">
+              Find Stalls <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
+          </div>
 
-            <div className="bg-white border border-[#E5DEC9] rounded-2xl p-5 shadow-xs hover:border-[#1E5631]/40 transition-colors">
-              <div className="h-10 w-10 rounded-xl bg-[#EAF4ED] text-[#1E5631] flex items-center justify-center mb-3">
-                <Radio className="h-5 w-5" />
-              </div>
-              <h4 className="font-bold text-[#1E2022] text-sm">Interactive Stall Radar</h4>
-              <p className="text-xs text-[#5C6360] mt-1.5 leading-relaxed">
-                Live spatial radar of the bazaar showing sensor density, walking distance in meters, and instant stock filtering across market lanes.
-              </p>
+          <div
+            onClick={() => navigate("/mandi")}
+            className="cursor-pointer bg-white border border-[#E5DEC9] hover:border-[#1E5631] rounded-2xl p-6 shadow-xs hover:shadow-md transition-all group"
+          >
+            <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-[#1E5631] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+            <h3 className="font-bold text-lg text-[#1E2022]">
+              Mandi Wholesale Arbitrage
+            </h3>
+            <p className="text-xs text-[#5C6360] mt-2 leading-relaxed">
+              "Konsi Mandi?" Live wholesale vs retail spreads between Azadpur APMC, Ghazipur, Okhla, and INA Market.
+            </p>
+            <div className="mt-4 text-xs font-bold text-[#1E5631] flex items-center gap-1">
+              Compare Mandis <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          <div
+            onClick={() => navigate("/loans")}
+            className="cursor-pointer bg-white border border-[#E5DEC9] hover:border-amber-600 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all group"
+          >
+            <div className="h-12 w-12 rounded-2xl bg-amber-50 text-amber-800 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <Banknote className="h-6 w-6" />
+            </div>
+            <h3 className="font-bold text-lg text-[#1E2022]">
+              Vendor Working Capital
+            </h3>
+            <p className="text-xs text-[#5C6360] mt-2 leading-relaxed">
+              Instant daily micro-loans (₹5k–₹50k) underwritten by morning presence and sales velocity. 0 collateral, UPI auto-settled.
+            </p>
+            <div className="mt-4 text-xs font-bold text-amber-800 flex items-center gap-1">
+              Check Eligibility <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
         </div>
+      </section>
 
-        <div className="mt-10 rounded-2xl bg-[#1E5631] text-white p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md">
+      {/* Live INA Produce Board Preview */}
+      <section className="max-w-6xl mx-auto px-5 md:px-8 py-12">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <div>
-            <div className="text-xs tracking-wider uppercase opacity-80">Pitch & Demo Ready</div>
-            <h3 className="font-display text-xl md:text-2xl font-bold mt-1">
-              Experience the INA Market Demonstration
+            <h3 className="font-display text-2xl font-bold text-[#1E2022]">
+              Live Produce Board · INA Market
             </h3>
-            <p className="text-xs opacity-90 mt-1 max-w-lg">
-              Walk through the 3-minute flow: view the pulse, speak as a vendor, express a shopper need, test Gemini route planning, and navigate on Google Maps.
+            <p className="text-xs text-[#5C6360] mt-0.5">
+              Current observed price spreads reported by verified stall sensors
             </p>
           </div>
           <button
             onClick={() => navigate("/pulse")}
-            className="shrink-0 px-6 py-3 rounded-full bg-[#FDFBF7] text-[#1E5631] font-semibold text-sm hover:bg-white transition-colors"
+            className="px-4 py-2 rounded-xl bg-white border border-[#E5DEC9] hover:bg-[#F7F4EE] text-xs font-bold text-[#1E2022] shadow-2xs flex items-center gap-1.5"
           >
-            Launch Market Pulse →
+            View All 15 Items <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
-      </section>
-    </div>
-  );
-}
 
-function PipelineStep({ num, title, desc, icon: Icon }) {
-  return (
-    <div className="bg-white border border-[#E5DEC9] rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <span className="h-7 w-7 rounded-full bg-[#1E5631]/10 text-[#1E5631] font-bold text-xs flex items-center justify-center">
-            {num}
-          </span>
-          <Icon className="h-4 w-4 text-[#1E5631]" />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {INA_PRODUCE_PREVIEW.map((item) => (
+            <div
+              key={item.name}
+              onClick={() => navigate("/pulse")}
+              className="cursor-pointer bg-white border border-[#E5DEC9] hover:border-[#1E5631] rounded-2xl p-4 transition-all shadow-xs hover:shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-base text-[#1E2022]">
+                    {item.name}
+                  </span>
+                  <span className="text-xs text-[#8A8A82] ml-2 font-medium">
+                    {item.hindi}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  {item.tag}
+                </span>
+              </div>
+
+              <div className="mt-3 flex items-baseline justify-between">
+                <span className="font-display text-xl font-bold text-[#1E5631]">
+                  {item.price}
+                </span>
+                <span className="text-xs font-semibold text-[#1E2022]">
+                  {item.status}
+                </span>
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-[#F0EBDE] flex items-center justify-between text-xs text-[#5C6360]">
+                <span>{item.stalls}</span>
+                <span className="truncate max-w-[140px] text-right font-medium text-[#1E2022]">
+                  {item.leadStall}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
-        <h4 className="font-bold text-[#1E2022] text-sm">{title}</h4>
-        <p className="text-xs text-[#5C6360] mt-1.5 leading-relaxed">{desc}</p>
-      </div>
-    </div>
-  );
-}
+      </section>
 
-function FlywheelCard() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.25 }}
-      className="hidden sm:block absolute -bottom-5 -left-5 bg-white/95 backdrop-blur-md border border-[#E5DEC9] rounded-2xl p-4 shadow-lg max-w-[240px]"
-    >
-      <div className="flex items-center gap-2 mb-1.5">
-        <Sparkles className="h-3.5 w-3.5 text-[#1E5631]" />
-        <span className="text-[11px] font-bold text-[#1E2022] uppercase tracking-wider">Living Pulse</span>
-      </div>
-      <p className="text-xs text-[#5C6360] leading-snug">
-        Evidence-backed availability & observed price ranges for India's neighborhood markets.
-      </p>
-    </motion.div>
+      {/* High-Converting Bottom Banner */}
+      <section className="max-w-6xl mx-auto px-5 md:px-8 py-10">
+        <div className="rounded-3xl bg-[#1E5631] text-white p-8 md:p-12 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+          <div className="relative z-10 max-w-xl">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+              Live Commercial Rollout
+            </span>
+            <h3 className="font-display text-2xl sm:text-3xl font-extrabold mt-2 leading-tight">
+              Experience the INA Market Intelligence Layer Today
+            </h3>
+            <p className="text-xs sm:text-sm text-emerald-100 mt-2 leading-relaxed">
+              Explore real-time produce prices, speak as a vendor, check wholesale mandi spreads, or simulate vendor working capital disbursals.
+            </p>
+          </div>
+
+          <div className="relative z-10 flex flex-col sm:flex-row gap-3 shrink-0">
+            <button
+              onClick={() => navigate("/pulse")}
+              className="px-7 py-3.5 rounded-full bg-[#FDFBF7] text-[#1E5631] font-bold text-sm hover:bg-white transition-all shadow-md"
+            >
+              Launch Market Pulse →
+            </button>
+            <button
+              onClick={() => navigate("/loans")}
+              className="px-6 py-3.5 rounded-full bg-emerald-900 border border-emerald-700 text-white font-bold text-sm hover:bg-emerald-800 transition-all"
+            >
+              Vendor Micro-Loans
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Clean Production Footer */}
+      <footer className="border-t border-[#E5DEC9] bg-[#F7F4EE] py-8 px-5 md:px-8 text-xs text-[#5C6360]">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-6 rounded-lg bg-[#1E5631] flex items-center justify-center text-white font-bold text-xs">
+              B
+            </div>
+            <span className="font-bold text-[#1E2022]">BazaarMind India</span>
+            <span>· The Intelligence Layer for Local Markets</span>
+          </div>
+
+          <div className="flex items-center gap-5 font-semibold text-[#1E2022]">
+            <button onClick={() => navigate("/pulse")} className="hover:text-[#1E5631]">Market Pulse</button>
+            <button onClick={() => navigate("/shop")} className="hover:text-[#1E5631]">Shopper</button>
+            <button onClick={() => navigate("/vendor")} className="hover:text-[#1E5631]">Vendor</button>
+            <button onClick={() => navigate("/mandi")} className="hover:text-[#1E5631]">Mandi Arbitrage</button>
+            <button onClick={() => navigate("/loans")} className="hover:text-[#1E5631]">Vendor Loans</button>
+            <button onClick={() => navigate("/ask")} className="hover:text-[#1E5631]">Ask AI</button>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }

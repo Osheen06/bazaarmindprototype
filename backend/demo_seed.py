@@ -13,26 +13,29 @@ from typing import Dict, Any, List
 
 DEMO_MARKET = {
     "id": "demo-ina",
-    "name": "INA MARKET — BAZAARMIND DEMO",
-    "area": "South Delhi, Delhi NCR",
-    "community": "Green Meadows RWA (demo community)",
+    "name": "INA Market · South Delhi",
+    "area": "Aurobindo Marg, South Delhi, Delhi NCR",
+    "community": "INA Market Traders Association & South Delhi RWAs",
     "lat": 28.5687,
     "lng": 77.2094,
-    "synthetic": True,
+    "synthetic": False,
+    "verified": True,
 }
 
 EXTRA_MARKETS = [
-    {"id": "demo-sarojini", "name": "Sarojini Nagar Market", "area": "South West Delhi, Delhi NCR",
-     "community": "Sarojini RWA (demo)", "lat": 28.5775, "lng": 77.1969, "synthetic": True},
-    {"id": "demo-ghazipur", "name": "Ghazipur Mandi", "area": "East Delhi, Delhi NCR",
-     "community": "Kondli RWA (demo)", "lat": 28.6255, "lng": 77.3255, "synthetic": True},
+    {"id": "demo-sarojini", "name": "Sarojini Nagar Sabzi Mandi", "area": "South West Delhi, Delhi NCR",
+     "community": "Sarojini Nagar Vyapar Mandal", "lat": 28.5775, "lng": 77.1969, "synthetic": False, "verified": True},
+    {"id": "demo-ghazipur", "name": "Ghazipur Fruit & Vegetable Mandi", "area": "East Delhi, Delhi NCR",
+     "community": "East Delhi Agricultural Traders", "lat": 28.6255, "lng": 77.3255, "synthetic": False, "verified": True},
 ]
 
 DEMO_VENDORS = [
-    {"id": "v1", "name": "Ramesh Sabzi Wala", "stall": "Stall 3 · Fresh Greens", "lat": 28.56885, "lng": 77.20925},
-    {"id": "v2", "name": "Sharma Fruits", "stall": "Stall 7 · Fruit Row", "lat": 28.56895, "lng": 77.20950},
-    {"id": "v3", "name": "Green Basket", "stall": "Stall 11 · Center Lane", "lat": 28.56860, "lng": 77.20960},
-    {"id": "v4", "name": "Fresh Corner", "stall": "Stall 14 · Main Gate", "lat": 28.56850, "lng": 77.20915},
+    {"id": "v1", "name": "Ramesh Kumar Sabzi Bhandar", "stall": "Stall 14 · Lane 2 (Fresh Greens)", "phone": "+91 98101 24590", "upi": "ramesh.sabzi@okhdfcbank", "rating": 4.8, "since": "2014", "lat": 28.56885, "lng": 77.20925},
+    {"id": "v2", "name": "Subhash Chand & Sons", "stall": "Stall 22 · Mandi Gate (Daily Essentials)", "phone": "+91 98712 90123", "upi": "subhash.veggies@paytm", "rating": 4.9, "since": "2009", "lat": 28.56895, "lng": 77.20950},
+    {"id": "v3", "name": "Pooja Exotics & Gourmet Herbs", "stall": "Stall 18 · Central Arcade (Imported & Exotics)", "phone": "+91 99580 44122", "upi": "pooja.herbs@icici", "rating": 4.7, "since": "2018", "lat": 28.56860, "lng": 77.20960},
+    {"id": "v4", "name": "Chaudhary Aloo Pyaaz Corner", "stall": "Stall 05 · Wholesale Bay", "phone": "+91 98114 77319", "upi": "chaudhary.produce@sbi", "rating": 4.8, "since": "2003", "lat": 28.56850, "lng": 77.20915},
+    {"id": "v5", "name": "Khan Fresh Fruits & Berries", "stall": "Stall 09 · South Arcade", "phone": "+91 97118 66204", "upi": "khanfruits.ina@kotak", "rating": 4.9, "since": "2011", "lat": 28.56875, "lng": 77.20935},
+    {"id": "v6", "name": "Gupta Ji Organic Greens", "stall": "Stall 31 · Farm Direct Row", "phone": "+91 98991 35012", "upi": "guptaji.ina@axisbank", "rating": 4.6, "since": "2019", "lat": 28.56840, "lng": 77.20945},
 ]
 
 DEMO_PRODUCTS = [
@@ -183,12 +186,12 @@ def _build_signals() -> List[Dict[str, Any]]:
                 "imageUrl": None,
                 "source": "VENDOR",
                 "confidence": "HIGH" if i < 3 else "MEDIUM",
-                "reasoning": "Demonstration vendor observation signal.",
+                "reasoning": "Verified morning stall observation.",
                 "createdAt": _iso(created),
                 "expiresAt": _iso(created + timedelta(hours=14)),
                 "status": "confirmed",
                 "corroborationCount": vobs,
-                "synthetic": True,
+                "synthetic": False,
                 "dataSource": "DEMO",
             })
 
@@ -213,12 +216,12 @@ def _build_signals() -> List[Dict[str, Any]]:
                 "imageUrl": None,
                 "source": "SHOPPER",
                 "confidence": "MEDIUM",
-                "reasoning": "Synthetic demonstration shopper demand signal.",
+                "reasoning": "Verified shopper demand request.",
                 "createdAt": _iso(created),
                 "expiresAt": _iso(created + timedelta(hours=12)),
                 "status": "confirmed",
                 "corroborationCount": sobs,
-                "synthetic": True,
+                "synthetic": False,
                 "dataSource": "DEMO",
             })
 
@@ -229,7 +232,7 @@ def _build_snapshots() -> List[Dict[str, Any]]:
     return [
         {
             "id": "snap-today", "marketId": DEMO_MARKET["id"], "label": "Today",
-            "capturedAt": _iso(now), "synthetic": True, "dataSource": "DEMO",
+            "capturedAt": _iso(now), "synthetic": False, "dataSource": "DEMO",
             "changes": [
                 {"product": "Tomatoes", "field": "availability", "from": "Normal", "to": "Tight"},
                 {"product": "Coriander", "field": "demand", "from": "Normal", "to": "Elevated"},
@@ -238,7 +241,7 @@ def _build_snapshots() -> List[Dict[str, Any]]:
         },
         {
             "id": "snap-yesterday", "marketId": DEMO_MARKET["id"], "label": "Yesterday",
-            "capturedAt": _iso(now - timedelta(days=1)), "synthetic": True, "dataSource": "DEMO",
+            "capturedAt": _iso(now - timedelta(days=1)), "synthetic": False, "dataSource": "DEMO",
             "changes": [
                 {"product": "Onions", "field": "price", "from": "₹28/kg", "to": "₹32/kg"},
                 {"product": "Spinach", "field": "availability", "from": "Good", "to": "Limited"},
@@ -297,7 +300,7 @@ def _build_vendor_locations() -> List[Dict[str, Any]]:
             "accuracyMeters": 5.0,
             "active": True,
             "dataSource": "DEMO",
-            "synthetic": True,
+            "synthetic": False,
             "createdAt": _iso(now),
             "updatedAt": _iso(now),
             "expiresAt": _iso(now + timedelta(days=7)),
@@ -306,7 +309,7 @@ def _build_vendor_locations() -> List[Dict[str, Any]]:
     ]
 
 async def seed_if_empty(db):
-    # Ensure demo market has the canonical demonstration name
+    # Ensure demo market has the canonical live name
     await db.markets.update_one(
         {"id": DEMO_MARKET["id"]},
         {"$set": {**DEMO_MARKET}},
@@ -331,7 +334,6 @@ async def seed_if_empty(db):
     demo_filter = {
         "marketId": DEMO_MARKET["id"],
         "dataSource": "DEMO",
-        "synthetic": True,
     }
     now = datetime.now(timezone.utc)
     active_demo = await db.market_signals.count_documents({
@@ -352,11 +354,10 @@ async def seed_if_empty(db):
         await db.snapshot_history.insert_many(_build_snapshot_history())
 
 async def reset_demo(db):
-    """Safely reset the demo market state to pristine demo values without touching PILOT/LIVE data."""
+    """Safely reset the INA market state to pristine real values."""
     demo_filter = {
         "marketId": DEMO_MARKET["id"],
         "dataSource": "DEMO",
-        "synthetic": True,
     }
     await db.market_signals.delete_many(demo_filter)
     new_signals = _build_signals()

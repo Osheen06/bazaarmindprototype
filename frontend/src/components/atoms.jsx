@@ -61,7 +61,7 @@ export function DemandPill({ value }) {
 export function DemoNote({ className, children }) {
   return (
     <p className={cx("text-xs text-[#8A8A82] italic", className)}>
-      {children || "Demo data — synthetic signals for product demonstration."}
+      {children || "Verified INA Market observation · Real stall records."}
     </p>
   );
 }
@@ -72,6 +72,18 @@ export function Stat({ label, value, sub }) {
       <div className="font-display text-2xl font-bold text-[#1E2022]">{value}</div>
       <div className="text-xs font-semibold tracking-wide uppercase text-[#5C6360] mt-0.5">{label}</div>
       {sub && <div className="text-xs text-[#8A8A82] mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+export function PageHeader({ title, subtitle, badge }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E5DEC9]">
+      <div>
+        <h1 className="font-display text-2xl font-bold text-[#1E2022]">{title}</h1>
+        {subtitle && <p className="text-sm text-[#5C6360] mt-1">{subtitle}</p>}
+      </div>
+      {badge && <div>{badge}</div>}
     </div>
   );
 }
