@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getPilotMetrics, getPilotStatus, createInvite, trackEvent } from "../lib/api";
 import {
-  Target, Users, Store, Building2, TrendingUp, Layers, Map, ShoppingCart, Truck, Network, Quote, UserPlus, Activity, Link2, Copy, Share2,
+  Target, Users, Store, Building2, TrendingUp, Layers, Map, ShoppingCart, Truck, Network, Quote, UserPlus, Activity, Link2, Copy, Share2, Sparkles, DollarSign, Leaf, Mic, HelpCircle, ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SectionLabel, Chip } from "../components/atoms";
 
 const TABS = [
+  { id: "pitch", label: "🏆 Live Pitch & Defense" },
   { id: "pilot", label: "Pilot" },
   { id: "status", label: "Live Status" },
   { id: "onboard", label: "Onboard" },
@@ -20,7 +21,7 @@ const TABS = [
 ];
 
 export default function PilotBusiness() {
-  const [tab, setTab] = useState("pilot");
+  const [tab, setTab] = useState("pitch");
   const [pilot, setPilot] = useState(null);
 
   useEffect(() => { getPilotMetrics().then(setPilot).catch(() => {}); trackEvent("business_viewed"); }, []);
@@ -45,6 +46,7 @@ export default function PilotBusiness() {
       </div>
 
       <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        {tab === "pitch" && <PitchDefense />}
         {tab === "pilot" && <Pilot pilot={pilot} />}
         {tab === "status" && <LiveStatus />}
         {tab === "onboard" && <Onboard />}
@@ -328,6 +330,157 @@ function Node({ title, who, desc, icon: Icon, tone }) {
       <div className="text-[11px] font-semibold tracking-wide uppercase text-[#5C6360] mt-3">{title}</div>
       <div className="font-display font-bold text-[#1E2022]">{who}</div>
       <div className="text-xs text-[#5C6360] mt-0.5">{desc}</div>
+    </div>
+  );
+}
+
+function PitchDefense() {
+  return (
+    <div className="space-y-6">
+      {/* Hero Thesis Banner */}
+      <div className="rounded-3xl bg-gradient-to-br from-[#1E5631] to-[#123820] text-[#FDFBF7] p-6 sm:p-8 shadow-sm">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold uppercase tracking-wider backdrop-blur-xs">
+          <Sparkles className="h-3.5 w-3.5 text-[#FCD34D]" /> Live Pitch Deck & Judging Defense
+        </div>
+        <h2 className="font-display text-2xl sm:text-3xl font-extrabold mt-3 leading-snug">
+          Why Fund BazaarMind? The Cognitive Sensor Network for 50 Million Informal Stalls.
+        </h2>
+        <p className="text-sm sm:text-base opacity-90 mt-2 max-w-3xl leading-relaxed">
+          Quick commerce burns billions delivering bottled water in 10 minutes. 80% of India buys fresh produce from neighborhood street mandis with zero digital visibility. BazaarMind does not replace the market with expensive warehouses — it makes the market's existing collective intelligence visible, actionable, and monetizable.
+        </p>
+      </div>
+
+      {/* 4 Pillars Grid */}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Pillar 1: Singapore Sensor Thesis */}
+        <div className="rounded-2xl bg-white border border-[#E5DEC9] p-5 shadow-2xs">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1E5631]">
+            <Network className="h-4 w-4" /> 1. The Singapore Sensor Thesis
+          </div>
+          <h3 className="font-display text-lg font-bold text-[#1E2022] mt-1.5">
+            Hardware Sensor Grid vs. Human Cognitive Sensor
+          </h3>
+          <p className="text-xs text-[#5C6360] mt-2 leading-relaxed">
+            Singapore invested billions installing environmental IoT sensors across every street lamp and intersection. In India's informal markets, you cannot place IoT hardware on 50 million wooden pushcarts.
+          </p>
+          <div className="mt-3.5 rounded-xl bg-[#F7F4EE] border border-[#E5DEC9] p-3 text-xs space-y-1.5 font-medium text-[#1E2022]">
+            <div>• <b>Every vendor is a sensor:</b> Knows arrivals, quality, and stockouts.</div>
+            <div>• <b>Every shopper is a probe:</b> Knows household demand before stepping out.</div>
+            <div>• <b>Gemini 3.8 Flash is the interpreter:</b> Translates messy dialects into structured market data.</div>
+          </div>
+        </div>
+
+        {/* Pillar 2: The BharatPe Audio Playbook */}
+        <div className="rounded-2xl bg-white border border-[#E5DEC9] p-5 shadow-2xs">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#D96B27]">
+            <Mic className="h-4 w-4" /> 2. Why Vendors Use It (The BharatPe Playbook)
+          </div>
+          <h3 className="font-display text-lg font-bold text-[#1E2022] mt-1.5">
+            "He Doesn't Know English. Why Will He Use It?"
+          </h3>
+          <p className="text-xs text-[#5C6360] mt-2 leading-relaxed">
+            BharatPe proved that unbanked Indian street vendors will adopt technology if it requires <b>zero reading and zero English</b>. The BharatPe soundbox succeeded because it simply spoke in Hindi.
+          </p>
+          <div className="mt-3.5 rounded-xl bg-[#F7F4EE] border border-[#E5DEC9] p-3 text-xs space-y-1.5 font-medium text-[#1E2022]">
+            <div>• <b>1-Tap Audio / WhatsApp Voice:</b> Vendor taps mic and speaks natural dialect: <i>"Bhaiya aaj tamatar 70 chal raha hai, maal kam hai."</i></div>
+            <div>• <b>No Account or Typing:</b> Gemini interprets, verifies stall location via GPS beacon, and confirms in spoken Hindi.</div>
+            <div>• <b>Immediate Incentive:</b> Vendor receives live neighborhood demand radar (e.g. "40 households want spinach today").</div>
+          </div>
+        </div>
+
+        {/* Pillar 3: Wastage Reduction & Farmer Arbitrage */}
+        <div className="rounded-2xl bg-white border border-[#E5DEC9] p-5 shadow-2xs">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1E5631]">
+            <Leaf className="h-4 w-4" /> 3. Food Wastage & Farmer Arbitrage
+          </div>
+          <h3 className="font-display text-lg font-bold text-[#1E2022] mt-1.5">
+            Slashing 35% Daily Spoilage + "Konsi Mandi Jaun?"
+          </h3>
+          <p className="text-xs text-[#5C6360] mt-2 leading-relaxed">
+            In Indian mandis, <b>30% to 40% of fresh vegetables perish</b> daily because vendors stock blindly based on intuition.
+          </p>
+          <div className="mt-3.5 rounded-xl bg-[#F7F4EE] border border-[#E5DEC9] p-3 text-xs space-y-1.5 font-medium text-[#1E2022]">
+            <div>• <b>Forward Demand Visibility:</b> 50 households in Green Meadows submitting shopping lists gives vendors predictive demand before 7:00 AM mandi procurement.</div>
+            <div>• <b>Farmer Mandi Arbitrage:</b> Wholesale farmers from Sonipat/Haryana know whether INA, Azadpur, Ghazipur, or Okhla has retail scarcity, preventing distress sales.</div>
+          </div>
+        </div>
+
+        {/* Pillar 4: Monetization Engine */}
+        <div className="rounded-2xl bg-white border border-[#E5DEC9] p-5 shadow-2xs">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1E5631]">
+            <DollarSign className="h-4 w-4" /> 4. How BazaarMind Makes Money
+          </div>
+          <h3 className="font-display text-lg font-bold text-[#1E2022] mt-1.5">
+            Micro-Loans, FMCG Brand Ads & Demand Routing
+          </h3>
+          <p className="text-xs text-[#5C6360] mt-2 leading-relaxed">
+            We never charge poor vendors upfront subscription fees. We monetize the proprietary intelligence layer.
+          </p>
+          <div className="mt-3.5 rounded-xl bg-[#F7F4EE] border border-[#E5DEC9] p-3 text-xs space-y-1.5 font-medium text-[#1E2022]">
+            <div>• <b>Working Capital Underwriting (The BharatPe Model):</b> Daily stall presence + price consistency creates an alternative credit score for NBFC daily micro-loans (₹3k–₹15k at 2% origination).</div>
+            <div>• <b>B2B FMCG Brand Ads:</b> ITC, Adani Wilmar, and Mother Dairy pay for real-time retail price velocity and consumer demand intelligence by pin code.</div>
+            <div>• <b>Qualified Demand Fees:</b> Commercial restaurants and cloud kitchens paying for guaranteed morning procurement routing.</div>
+          </div>
+        </div>
+      </div>
+
+      {/* South Delhi INA Market Exotic Food Case Study */}
+      <div className="rounded-2xl bg-white border border-[#E5DEC9] p-6 shadow-2xs">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1E5631]">
+            <Compass className="h-4 w-4" /> 5. South Delhi INA Market: Exotic Food Heatmap Case Study
+          </div>
+          <Chip tone="green">INA Market Prototype Live</Chip>
+        </div>
+        <h3 className="font-display text-xl font-bold text-[#1E2022] mt-2">
+          High-Margin Exotic Produce Intelligence for Affluent Urban Clusters
+        </h3>
+        <p className="text-xs sm:text-sm text-[#5C6360] mt-1.5 max-w-3xl leading-relaxed">
+          INA Market is Delhi NCR's premier destination for exotic culinary items. Affluent residents from Defence Colony, Jor Bagh, and South Extension visit specifically for avocados, shiitake mushrooms, bok choy, and bell peppers.
+        </p>
+        <div className="grid sm:grid-cols-4 gap-3 mt-4">
+          {[
+            ["Hass Avocados", "Stall 7 · Sharma Fruits", "₹120–₹140/pc", "High Demand"],
+            ["Fresh Mushrooms", "Stall 11 · Green Basket", "₹60–₹75/pack", "Good Stock"],
+            ["Colored Bell Peppers", "Stall 3 · Fresh Greens", "₹110–₹130/kg", "Tight Supply"],
+            ["Bok Choy / Greens", "Stall 3 · Ramesh Sabzi", "₹85–₹95/kg", "Moving Fast"],
+          ].map(([item, stall, price, status]) => (
+            <div key={item} className="rounded-xl bg-[#FDFBF7] border border-[#E5DEC9] p-3 text-xs">
+              <div className="font-bold text-[#1E2022]">{item}</div>
+              <div className="text-[11px] text-[#5C6360] mt-0.5">{stall}</div>
+              <div className="font-semibold text-[#1E5631] mt-1.5">{price}</div>
+              <div className="text-[10px] text-[#D96B27] font-medium mt-0.5">{status}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Judge Tough Questions & Defenses */}
+      <div className="rounded-2xl bg-[#F7F4EE] border border-[#E5DEC9] p-6 shadow-2xs">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1E2022]">
+          <HelpCircle className="h-4 w-4 text-[#1E5631]" /> 6. Critical Judge Questions & Unbeatable Answers
+        </div>
+        <div className="grid md:grid-cols-3 gap-4 mt-4">
+          <div className="bg-white rounded-xl p-4 border border-[#E5DEC9]">
+            <div className="font-bold text-[#1E2022] text-xs">"Why Won't Zepto or Blinkit Kill You?"</div>
+            <p className="text-[11px] text-[#5C6360] mt-2 leading-relaxed">
+              Quick commerce dark stores carry 15-20% spoilage cost, mark up vegetable prices by 30-50%, and offer limited pre-packed produce. 80% of Indians refuse to buy packaged tomatoes sight-unseen. BazaarMind gives shoppers the intelligence to shop fresh locally without quick commerce premiums.
+            </p>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-[#E5DEC9]">
+            <div className="font-bold text-[#1E2022] text-xs">"How Do You Solve the Cold-Start Problem?"</div>
+            <p className="text-[11px] text-[#5C6360] mt-2 leading-relaxed">
+              Hyperlocal clustering: 1 RWA (Resident Welfare Association) with 50 households paired with 1 neighborhood mandi (10 stalls). 50 shopping lists generate enough high-frequency demand signals in 48 hours to create a dense, self-sustaining intelligence flywheel.
+            </p>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-[#E5DEC9]">
+            <div className="font-bold text-[#1E2022] text-xs">"What If Vendors Report Fake Prices?"</div>
+            <p className="text-[11px] text-[#5C6360] mt-2 leading-relaxed">
+              BazaarMind's deterministic engine enforces independent vendor corroboration ($N \ge 2$ distinct stalls) + statistical mode clamping. An outlier price reported by one stall is automatically downgraded to "Conflicting Conditions" or filtered as pending until cross-validated by shopper receipts.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

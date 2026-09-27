@@ -31,6 +31,9 @@ const FILTER_ITEMS = [
   "Coriander",
   "Fruits",
   "Spinach",
+  "Avocados",
+  "Mushrooms",
+  "Bell Peppers",
 ];
 
 export default function MarketRadarMap({

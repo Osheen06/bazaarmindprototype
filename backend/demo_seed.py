@@ -47,6 +47,10 @@ DEMO_PRODUCTS = [
     {"name": "Ginger", "hindi": "अदरक"},
     {"name": "Carrots", "hindi": "गाजर"},
     {"name": "Spinach", "hindi": "पालक"},
+    {"name": "Avocados", "hindi": "एवोकाडो", "category": "Exotic"},
+    {"name": "Mushrooms", "hindi": "मशरूम", "category": "Exotic"},
+    {"name": "Bell Peppers", "hindi": "शिमला मिर्च", "category": "Exotic"},
+    {"name": "Bok Choy", "hindi": "पाक चोई", "category": "Exotic"},
 ]
 
 # product -> (availability, demand, price_low, price_high, unit, vendor_obs, shopper_signals)
@@ -62,6 +66,10 @@ _SPEC = {
     "Ginger": ("NORMAL", "NORMAL", 120, 140, "kg", 2, 4),
     "Carrots": ("HIGH", "NORMAL", 35, 40, "kg", 3, 3),
     "Spinach": ("LOW", "HIGH", 25, 30, "bunch", 3, 5),
+    "Avocados": ("NORMAL", "HIGH", 120, 140, "piece", 3, 5),
+    "Mushrooms": ("HIGH", "NORMAL", 60, 75, "pack", 3, 4),
+    "Bell Peppers": ("NORMAL", "HIGH", 110, 130, "kg", 3, 4),
+    "Bok Choy": ("LOW", "HIGH", 85, 95, "kg", 2, 3),
 }
 
 _VENDOR_TEXTS = {
@@ -113,6 +121,22 @@ _VENDOR_TEXTS = {
     "Spinach": [
         "Palak subah fresh aayi thi, ab thodi bachi hai.",
         "Palak limited availability today.",
+    ],
+    "Avocados": [
+        "Hass avocados arrived today, 130 per piece, high demand from Defence Colony.",
+        "Good creamy avocado stock at Stall 7, 120 each.",
+    ],
+    "Mushrooms": [
+        "Fresh button mushrooms packed this morning, 65 per pack.",
+        "Mushrooms plenty in stock today at Stall 11.",
+    ],
+    "Bell Peppers": [
+        "Red and yellow bell peppers available, 120 per kg.",
+        "Capsicum fresh lot arrived, good stock today.",
+    ],
+    "Bok Choy": [
+        "Bok choy limited today, only 5 bunches left at Stall 3, 90 per kg.",
+        "Asian greens moving fast this morning.",
     ],
 }
 

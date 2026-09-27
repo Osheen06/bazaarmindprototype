@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, ShieldCheck, RotateCcw, X, Layers, Store, Users, Clock, AlertTriangle, ArrowRight, Compass, Navigation, ExternalLink, MapPin } from "lucide-react";
 import { getMarketPulse, trackEvent, resetDemo, getGoogleMapsDirectionsUrl } from "../lib/api";
@@ -15,6 +15,16 @@ export default function MarketPulse() {
   const [resetting, setResetting] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showRadarMap, setShowRadarMap] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
+
+  const EXOTIC_ITEMS = useMemo(() => new Set(["Avocados", "Mushrooms", "Bell Peppers", "Bok Choy"]), []);
+
+  const displayedProducts = useMemo(() => {
+    const prods = Array.isArray(pulse?.products) ? pulse.products : [];
+    if (categoryFilter === "EXOTIC") return prods.filter((p) => EXOTIC_ITEMS.has(p.product));
+    if (categoryFilter === "ESSENTIALS") return prods.filter((p) => !EXOTIC_ITEMS.has(p.product));
+    return prods;
+  }, [pulse, categoryFilter, EXOTIC_ITEMS]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -126,11 +136,33 @@ export default function MarketPulse() {
         )}
       </AnimatePresence>
 
+      {/* Produce Category Selector */}
+      <div className="flex items-center gap-2 mt-5 flex-wrap">
+        {[
+          ["ALL", "All Market Produce"],
+          ["ESSENTIALS", "Daily Mandi Essentials"],
+          ["EXOTIC", "✨ South Delhi Exotic Produce (INA Showcase)"],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setCategoryFilter(key)}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shadow-2xs ${
+              categoryFilter === key
+                ? "bg-[#1E5631] text-white"
+                : "bg-white border border-[#E5DEC9] text-[#5C6360] hover:bg-[#F7F4EE]"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Grid of Product Signal Cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3.5">
         {loading && !pulse
           ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
-          : (Array.isArray(pulse?.products) ? pulse.products : []).map((p, i) => (
+          : displayedProducts.map((p, i) => (
               <SignalCard
                 key={p.product}
                 p={p}

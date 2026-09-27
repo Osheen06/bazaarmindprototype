@@ -25,7 +25,7 @@ GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 CANONICAL_PRODUCTS = [
     "Tomatoes", "Potatoes", "Onions", "Coriander",
     "Lemon", "Banana", "Apple", "Chilli", "Ginger",
-    "Carrots", "Spinach",
+    "Carrots", "Spinach", "Avocados", "Mushrooms", "Bell Peppers", "Bok Choy",
 ]
 
 PRODUCT_ALIASES = {
@@ -40,6 +40,10 @@ PRODUCT_ALIASES = {
     "adrak": "Ginger", "adrakh": "Ginger", "ginger": "Ginger", "अदरक": "Ginger",
     "gajar": "Carrots", "carrot": "Carrots", "carrots": "Carrots", "गाजर": "Carrots",
     "palak": "Spinach", "spinach": "Spinach", "पालक": "Spinach",
+    "avocado": "Avocados", "avocados": "Avocados", "makhanphal": "Avocados", "एवोकाडो": "Avocados",
+    "mushroom": "Mushrooms", "mushrooms": "Mushrooms", "khumbi": "Mushrooms", "मशरूम": "Mushrooms",
+    "shimla mirch": "Bell Peppers", "shimlamirch": "Bell Peppers", "capsicum": "Bell Peppers", "bell pepper": "Bell Peppers", "bell peppers": "Bell Peppers", "शिमला मिर्च": "Bell Peppers",
+    "bok choy": "Bok Choy", "pak choi": "Bok Choy", "bokchoy": "Bok Choy",
 }
 
 AVAILABILITY_HINDI = {

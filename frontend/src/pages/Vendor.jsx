@@ -219,6 +219,21 @@ export default function Vendor() {
         </div>
       </div>
 
+      {/* The BharatPe Audio Playbook Explanation Badge */}
+      <div className="mt-3.5 rounded-2xl bg-[#F7F4EE] border border-[#E5DEC9] px-4 py-3 flex items-start gap-3 text-xs">
+        <div className="h-8 w-8 rounded-xl bg-[#1E5631]/10 text-[#1E5631] flex items-center justify-center shrink-0 mt-0.5">
+          <Mic className="h-4 w-4" />
+        </div>
+        <div>
+          <div className="font-bold text-[#1E2022] flex items-center gap-1.5">
+            The BharatPe Audio Playbook · Zero English, Zero Typing Required
+          </div>
+          <p className="text-[#5C6360] mt-0.5 leading-relaxed">
+            Street vendors never type in English. Just like the BharatPe soundbox succeeded with spoken Hindi, BazaarMind lets any vendor tap <b>बोलिए (Speak)</b> in their local dialect. Gemini 3.8 Flash extracts the item, stock, and price, and verifies it against the stall GPS beacon.
+          </p>
+        </div>
+      </div>
+
       {/* Location / Market context */}
       <div className="mt-4 mb-4">
         <VendorLocationCard
@@ -301,6 +316,31 @@ export default function Vendor() {
                 <p className="text-xs text-[#5C6360] mt-1 max-w-sm">
                   जैसे: "आज टमाटर थोड़ा कम आया है और रेट 70 रुपये है।"
                 </p>
+
+                {/* Instant Hindi Audio Simulation Pills (BharatPe-Style) */}
+                <div className="mt-5 flex flex-wrap justify-center gap-1.5 max-w-md mx-auto">
+                  <span className="text-[11px] font-semibold text-[#8A8A82] w-full text-center mb-1">
+                    या तुरंत आज़माएँ (Tap to simulate vendor voice note):
+                  </span>
+                  {[
+                    "आज टमाटर 70 चल रहा है, 2 पेटी बची है",
+                    "धनिया और पालक आज खत्म हो गया",
+                    "शिमला मिर्च और एवोकाडो का नया स्टॉक आया है",
+                    "आलू का रेट 26 रुपये किलो है, भरपूर स्टॉक",
+                  ].map((phrase) => (
+                    <button
+                      key={phrase}
+                      type="button"
+                      onClick={() => {
+                        setText(phrase);
+                        doInterpret(phrase, null);
+                      }}
+                      className="text-xs bg-white border border-[#E5DEC9] text-[#1E2022] hover:bg-[#1E5631]/8 hover:border-[#1E5631] px-3 py-1.5 rounded-full transition-colors font-hindi shadow-2xs"
+                    >
+                      🗣️ {phrase}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 

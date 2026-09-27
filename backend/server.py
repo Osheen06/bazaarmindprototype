@@ -416,6 +416,10 @@ async def shopping_list_parse(req: ShoppingListRequest):
         "persisted": req.persist,
     }
 
+@api.post("/shopper/parse", include_in_schema=False)
+async def shopper_parse_alias(req: ShoppingListRequest):
+    return await shopping_list_parse(req)
+
 @api.post("/shopper/plan-route")
 async def plan_shopper_route_endpoint(req: PlanRouteRequest):
     data_source = req.dataSource or "DEMO"
@@ -515,6 +519,10 @@ async def ask_bazaar(req: AskRequest):
             "freshness": pulse.get("freshness", "Active today"),
         }
 
+@api.post("/ask", include_in_schema=False)
+async def ask_alias(req: AskRequest):
+    return await ask_bazaar(req)
+
 # ----------------------------- Voice (Whisper STT) -----------------------------
 @api.get("/voice/status")
 async def voice_status():
@@ -575,6 +583,10 @@ async def market_network(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO
                      "supplySignals": vendor_counts.get(v["id"], 0)} for v in vendors]
     return {"market": market or {"id": marketId, "name": "INA MARKET — BAZAARMIND DEMO"}, "vendors": vendor_nodes,
             "shopperSignals": shopper_total, "supplySignals": sum(vendor_counts.values()), "dataSource": dataSource}
+
+@api.get("/market/network", include_in_schema=False)
+async def market_network_alias(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
+    return await market_network(marketId, dataSource)
 
 # ----------------------------- Snapshots -----------------------------
 @api.get("/snapshots")

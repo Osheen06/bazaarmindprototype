@@ -43,10 +43,13 @@ export default function PilotOnboard() {
         const { latitude, longitude } = pos.coords;
         setCoords({ lat: latitude, lng: longitude });
         try {
-          const near = await getMarketsNearby(latitude, longitude);
-          setMarkets(near);
-          if (near[0]) setForm((f) => ({ ...f, marketId: near[0].id }));
-          toast.success(`Nearest participating market: ${near[0]?.name}`);
+          const nearResult = await getMarketsNearby(latitude, longitude);
+          const nearList = Array.isArray(nearResult) ? nearResult : (nearResult?.markets || []);
+          if (nearList.length) {
+            setMarkets(nearList);
+            setForm((f) => ({ ...f, marketId: nearList[0].id }));
+            toast.success(`Nearest participating market: ${nearList[0]?.name}`);
+          }
         } catch { toast.error("Couldn't find nearby markets."); }
         finally { setLocating(false); }
       },
