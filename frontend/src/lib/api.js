@@ -507,9 +507,7 @@ export function getGoogleMapsDirectionsUrl({
   marketName = "INA Market",
   area = "South Delhi",
 }) {
-  const validLat = lat != null && !Number.isNaN(Number(lat)) && Number(lat) !== 0;
-  const validLng = lng != null && !Number.isNaN(Number(lng)) && Number(lng) !== 0;
-  if (validLat && validLng) {
+  if (lat && lng) {
     return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
   }
   const q = [stallName, marketName, area].filter(Boolean).join(", ");

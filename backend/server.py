@@ -785,10 +785,7 @@ api.include_router(stall_router)
 
 app.include_router(api)
 
-_raw_cors = os.environ.get(
-    "CORS_ORIGINS",
-    "http://localhost:3000,http://localhost:5173,https://bazaarmind-nine.vercel.app,https://bazaarmind.vercel.app,*"
-)
+_raw_cors = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173")
 _cors_origins = [origin.strip().rstrip("/") for origin in _raw_cors.split(",") if origin.strip()]
 _cors_wildcard = "*" in _cors_origins
 

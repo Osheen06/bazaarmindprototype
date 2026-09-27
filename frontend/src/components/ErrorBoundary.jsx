@@ -15,37 +15,25 @@ export class ErrorBoundary extends React.Component {
     console.error("ErrorBoundary caught an error:", error, errorInfo);
   }
 
-  handleRetry = () => {
-    this.setState({ hasError: false, error: null });
-  };
-
   render() {
     if (this.state.hasError) {
       return (
-        <div className="rounded-3xl bg-[#FDFBF7] border border-[#E5DEC9] p-8 flex flex-col items-center justify-center text-center my-6 shadow-sm">
-          <div className="h-12 w-12 rounded-2xl bg-[#C53030]/10 flex items-center justify-center text-[#C53030] mb-3">
-            <AlertTriangle className="h-6 w-6" />
+        <div className="min-h-screen bg-[#FDFBF7] flex flex-col items-center justify-center p-6 text-center">
+          <div className="h-14 w-14 rounded-2xl bg-[#C53030]/10 flex items-center justify-center text-[#C53030] mb-4">
+            <AlertTriangle className="h-7 w-7" />
           </div>
-          <h2 className="font-display text-xl font-bold text-[#1E2022]">
-            Market signals temporarily paused
-          </h2>
-          <p className="text-xs text-[#5C6360] mt-1.5 max-w-sm">
-            BazaarMind ran into an unexpected view update. You can safely try again or reload the page.
+          <h1 className="font-display text-2xl font-bold text-[#1E2022]">
+            Something unexpected occurred
+          </h1>
+          <p className="text-sm text-[#5C6360] mt-2 max-w-md">
+            BazaarMind ran into an interface error. Tap below to reload the market signals safely.
           </p>
-          <div className="mt-5 flex items-center gap-2 flex-wrap justify-center">
-            <button
-              onClick={this.handleRetry}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#1E5631] text-[#FDFBF7] px-4 py-2 text-xs font-semibold hover:bg-[#194727] transition-colors"
-            >
-              <RefreshCw className="h-3.5 w-3.5" /> Try again
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#E5DEC9] bg-white text-[#1E2022] px-4 py-2 text-xs font-semibold hover:bg-[#F7F4EE] transition-colors"
-            >
-              Reload BazaarMind
-            </button>
-          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#1E5631] text-[#FDFBF7] px-6 py-3 text-sm font-semibold hover:bg-[#194727] transition-colors"
+          >
+            <RefreshCw className="h-4 w-4" /> Reload BazaarMind
+          </button>
         </div>
       );
     }

@@ -284,10 +284,7 @@ export default function MarketRadarMap({
 
               {/* Walking Coordinates & Sensor Info */}
               <div className="rounded-xl bg-[#F7F4EE] p-2.5 text-[11px] text-[#5C6360] flex items-center justify-between font-mono">
-                <span>
-                  GPS: {selectedVendor?.lat != null ? Number(selectedVendor.lat).toFixed(4) : "28.5689"},{" "}
-                  {selectedVendor?.lng != null ? Number(selectedVendor.lng).toFixed(4) : "77.2093"}
-                </span>
+                <span>GPS: {selectedVendor?.lat?.toFixed(4)}, {selectedVendor?.lng?.toFixed(4)}</span>
                 <span className="text-[#1E5631] font-semibold">Active Sensor</span>
               </div>
             </motion.div>

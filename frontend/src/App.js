@@ -16,13 +16,7 @@ import PilotOnboard from "./pages/PilotOnboard";
 import WhatsAppChannel from "./pages/WhatsAppChannel";
 import More from "./pages/More";
 
-const withShell = (el) => (
-  <Layout>
-    <ErrorBoundary>
-      {el}
-    </ErrorBoundary>
-  </Layout>
-);
+const withShell = (el) => <Layout>{el}</Layout>;
 
 export default function App() {
   return (
@@ -30,22 +24,22 @@ export default function App() {
       <ErrorBoundary>
         <AppProvider>
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<ErrorBoundary><Landing /></ErrorBoundary>} />
-              <Route path="/pulse" element={withShell(<MarketPulse />)} />
-              <Route path="/network" element={withShell(<MarketNetwork />)} />
-              <Route path="/shop" element={withShell(<Shop />)} />
-              <Route path="/vendor" element={withShell(<Vendor />)} />
-              <Route path="/ask" element={withShell(<Ask />)} />
-              <Route path="/business" element={withShell(<PilotBusiness />)} />
-              <Route path="/whatsapp" element={withShell(<WhatsAppChannel />)} />
-              <Route path="/join" element={withShell(<PilotOnboard />)} />
-              <Route path="/more" element={withShell(<More />)} />
-            </Routes>
-            <Toaster position="top-center" richColors />
-          </BrowserRouter>
-        </AppProvider>
-      </ErrorBoundary>
-    </div>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/pulse" element={withShell(<MarketPulse />)} />
+            <Route path="/network" element={withShell(<MarketNetwork />)} />
+            <Route path="/shop" element={withShell(<Shop />)} />
+            <Route path="/vendor" element={withShell(<Vendor />)} />
+            <Route path="/ask" element={withShell(<Ask />)} />
+            <Route path="/business" element={withShell(<PilotBusiness />)} />
+            <Route path="/whatsapp" element={withShell(<WhatsAppChannel />)} />
+            <Route path="/join" element={withShell(<PilotOnboard />)} />
+            <Route path="/more" element={withShell(<More />)} />
+          </Routes>
+          <Toaster position="top-center" richColors />
+        </BrowserRouter>
+      </AppProvider>
+    </ErrorBoundary>
+  </div>
   );
 }

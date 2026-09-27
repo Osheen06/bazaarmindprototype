@@ -34,25 +34,16 @@ export function Chip({ children, tone = "neutral", className, ...rest }) {
 }
 
 export function ConfidenceBadge({ level, className }) {
-  const normalized = level
-    ? level.charAt(0).toUpperCase() + level.slice(1).toLowerCase()
-    : "Low";
-  const displayLevel = ["High", "Medium", "Low"].includes(normalized)
-    ? normalized
-    : level?.toUpperCase()?.includes("EARLY")
-    ? "Medium"
-    : "Low";
-
   const map = {
     High: { tone: "green", Icon: ShieldCheck },
     Medium: { tone: "orange", Icon: Shield },
     Low: { tone: "red", Icon: ShieldAlert },
   };
-  const { tone, Icon } = map[displayLevel] || map.Low;
+  const { tone, Icon } = map[level] || map.Low;
   return (
     <Chip tone={tone} className={className} data-testid="confidence-badge">
       <Icon className="h-3.5 w-3.5" />
-      {displayLevel} confidence
+      {level} confidence
     </Chip>
   );
 }

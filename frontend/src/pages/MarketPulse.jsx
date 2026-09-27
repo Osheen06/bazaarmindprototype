@@ -9,7 +9,7 @@ import { SectionLabel, DemoNote } from "../components/atoms";
 import MarketRadarMap from "../components/MarketRadarMap";
 
 export default function MarketPulse() {
-  const { marketId, setMarketId, pulseVersion, refreshPulse, dataSource, currentMarket } = useApp();
+  const { marketId, setMarketId, pulseVersion, refreshPulse, dataSource } = useApp();
   const [pulse, setPulse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
@@ -121,7 +121,7 @@ export default function MarketPulse() {
             transition={{ duration: 0.3 }}
             className="mt-5 overflow-hidden"
           >
-            <MarketRadarMap marketName={pulse?.market?.name || currentMarket?.name || "INA MARKET — BAZAARMIND DEMO"} />
+            <MarketRadarMap marketName={market?.name || "INA MARKET — BAZAARMIND DEMO"} />
           </motion.div>
         )}
       </AnimatePresence>
