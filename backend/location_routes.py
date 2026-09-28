@@ -6,6 +6,7 @@ It does not provide BazaarMind intelligence, vendor prices, inventory,
 participation, or shopper demand.
 """
 
+import logging
 import math
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,6 +16,8 @@ from pydantic import BaseModel, Field
 
 from market_discovery import search_nearby_markets, is_configured
 from utils import haversine_km
+
+logger = logging.getLogger("bazaarmind.location")
 
 
 def now_iso() -> str:
@@ -44,6 +47,7 @@ def build_router(db):
             "provider": "GOOGLE_PLACES" if configured else None,
         }
 
+    @router.get("/market/discover")
     @router.get("/markets/discover-nearby")
     async def discover_markets(
         lat: float = Query(..., ge=-90, le=90),
@@ -51,6 +55,7 @@ def build_router(db):
         radiusKm: float = Query(10.0, gt=0, le=50.0),
         maxResults: int = Query(20, ge=1, le=20),
     ):
+        places = []
         try:
             places = await search_nearby_markets(
                 lat=lat,
@@ -60,13 +65,8 @@ def build_router(db):
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
-        except RuntimeError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
         except Exception as exc:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Market discovery failed: {exc}",
-            ) from exc
+            logger.warning("Places search error (%s), using local fallback: %s", type(exc).__name__, exc)
 
         normalized = []
         for place in places:
@@ -85,17 +85,39 @@ def build_router(db):
                 "intelligenceAvailable": False,
             })
 
+        # If external places is empty or unauthenticated, provide registered local markets
+        if not normalized:
+            db_markets = await db.markets.find({}, {"_id": 0}).to_list(50)
+            for m in db_markets:
+                m_lat, m_lng = m.get("lat"), m.get("lng")
+                if m_lat is not None and m_lng is not None:
+                    d_km = round(haversine_km(lat, lng, float(m_lat), float(m_lng)), 2)
+                    is_demo = m.get("id", "").startswith("demo-") or m.get("synthetic", False)
+                    normalized.append({
+                        "id": m.get("id"),
+                        "name": m.get("name"),
+                        "displayName": m.get("name"),
+                        "address": m.get("area", ""),
+                        "lat": m_lat,
+                        "lng": m_lng,
+                        "distanceKm": d_km,
+                        "discoveryOnly": m.get("discoveryOnly", False),
+                        "state": "DEMO" if is_demo else ("LIVE" if m.get("signalCount", 0) > 0 else "INSUFFICIENT_DATA"),
+                        "intelligenceAvailable": is_demo,
+                    })
+
         normalized.sort(key=lambda item: item["distanceKm"])
         configured = is_configured()
 
         return {
             "ok": True,
             "configured": configured,
-            "provider": "GOOGLE_PLACES" if configured else None,
+            "provider": "GOOGLE_PLACES" if (configured and places) else "BAZAARMIND_LOCAL",
             "origin": {"lat": lat, "lng": lng},
             "radiusKm": radiusKm,
             "count": len(normalized),
             "places": normalized,
+            "markets": normalized,
         }
 
     @router.post("/markets/register-discovered")

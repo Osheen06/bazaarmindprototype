@@ -118,6 +118,57 @@ export const registerDiscoveredMarket = (market) =>
       },
     }));
 
+export const reverseGeocode = async (lat, lng) => {
+  try {
+    const res = await client.get("/location/reverse", { params: { lat, lng } });
+    if (res.data && res.data.ok) {
+      return res.data;
+    }
+  } catch (err) {
+    console.warn("Reverse geocode backend call failed, falling back to local heuristic", err);
+  }
+  if (lat >= 28.3 && lat <= 28.9 && lng >= 76.8 && lng <= 77.5) {
+    return {
+      ok: true,
+      locality: "South Delhi / INA Area",
+      area: "South Delhi",
+      city: "New Delhi",
+      displayName: "South Delhi, New Delhi",
+    };
+  }
+  return {
+    ok: true,
+    locality: "Local Area",
+    area: "Neighbourhood",
+    city: "Local Region",
+    displayName: `${lat.toFixed(2)}, ${lng.toFixed(2)}`,
+  };
+};
+
+export const getMarketById = async (marketId) => {
+  try {
+    const res = await client.get(`/markets/${marketId}`);
+    return res.data;
+  } catch (err) {
+    return {
+      id: marketId,
+      name: marketId === "demo-ina" ? "INA MARKET — BAZAARMIND DEMO" : marketId,
+      state: marketId === "demo-ina" ? "DEMO" : "INSUFFICIENT_DATA",
+      dataSource: marketId === "demo-ina" ? "DEMO" : "REAL",
+      isDemo: marketId === "demo-ina",
+    };
+  }
+};
+
+export const confirmSignal = (payload) =>
+  client.post("/signals/confirm", payload).then((r) => r.data);
+
+export const submitShopperDemand = (payload) =>
+  client.post("/shopper/demand", payload).then((r) => r.data);
+
+export const submitVendorObservation = (payload) =>
+  client.post("/vendor/observation", payload).then((r) => r.data);
+
 export const getMarketsNearby = async (
   lat,
   lng,

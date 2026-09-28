@@ -3,6 +3,7 @@ import time
 import uuid
 import math
 import logging
+import httpx
 from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
@@ -172,6 +173,37 @@ class OnboardVendor(BaseModel):
     consent: bool = False
     signalMethod: str = "text"
 
+class ConfirmSignalRequest(BaseModel):
+    marketId: str = DEFAULT_MARKET
+    dataSource: str = "DEMO"
+    product: str
+    availability: Optional[str] = "NORMAL"
+    reportedPrice: Optional[float] = None
+    priceUnit: Optional[str] = "kg"
+    confidence: str = "HIGH"
+    rawText: Optional[str] = ""
+    source: str = "VENDOR"
+    vendorName: Optional[str] = None
+    stallName: Optional[str] = None
+
+class ShopperDemandRequest(BaseModel):
+    marketId: str = DEFAULT_MARKET
+    dataSource: str = "DEMO"
+    items: List[str] = Field(default_factory=list)
+    maxBudget: Optional[float] = None
+    note: Optional[str] = None
+
+class VendorObservationRequest(BaseModel):
+    marketId: str = DEFAULT_MARKET
+    dataSource: str = "DEMO"
+    product: str
+    price: Optional[float] = None
+    priceUnit: Optional[str] = "kg"
+    availability: Optional[str] = "NORMAL"
+    note: Optional[str] = None
+    stall: Optional[str] = None
+    vendorName: Optional[str] = None
+
 def _resolve_source(participant_id: Optional[str], explicit: Optional[str]) -> str:
     if explicit in ("DEMO", "PILOT", "REAL"):
         return explicit
@@ -264,6 +296,301 @@ async def get_markets_nearby(
         "markets": enriched,
         "recommendedMarketId": recommended,
         "hasNearbyIntelligence": recommended is not None,
+    }
+
+def _determine_market_state(market_doc: Dict[str, Any], signal_count: int) -> str:
+    m_id = market_doc.get("id", "")
+    if m_id.startswith("demo-") or market_doc.get("synthetic") or market_doc.get("dataSource") == "DEMO":
+        return "DEMO"
+    if signal_count >= 5:
+        return "LIVE"
+    if signal_count > 0:
+        return "PILOT"
+    if market_doc.get("discoveryOnly"):
+        return "DISCOVERED"
+    return "INSUFFICIENT_DATA"
+
+@api.get("/markets/{market_id}")
+async def get_market_by_id(market_id: str):
+    m = await db.markets.find_one({"id": market_id}, {"_id": 0})
+    if not m:
+        if market_id == "demo-ina":
+            m = dict(demo_seed.DEMO_MARKET)
+        else:
+            raise HTTPException(status_code=404, detail="Market not found")
+
+    sig_count = await db.market_signals.count_documents({"marketId": market_id, "status": "confirmed"})
+    state = _determine_market_state(m, sig_count)
+    is_demo = state == "DEMO"
+
+    return {
+        **m,
+        "state": state,
+        "marketState": state,
+        "isDemo": is_demo,
+        "dataSource": "DEMO" if is_demo else ("PILOT" if state == "PILOT" else "REAL"),
+        "disclaimer": "DEMO · Synthetic illustrative data" if is_demo else None,
+        "signalCount": sig_count,
+        "intelligenceAvailable": is_demo or sig_count > 0,
+    }
+
+@api.get("/markets/{market_id}/pulse")
+async def get_market_pulse_canonical(market_id: str, dataSource: Optional[str] = None):
+    market = await db.markets.find_one({"id": market_id}, {"_id": 0})
+    if not market and market_id == "demo-ina":
+        market = dict(demo_seed.DEMO_MARKET)
+    ds = dataSource or ("DEMO" if market_id.startswith("demo-") else "REAL")
+    pulse = await intelligence.compute_market_pulse(db, market_id, data_source=ds)
+    sig_count = pulse.get("totalSignals", 0)
+    state = _determine_market_state(market or {"id": market_id}, sig_count)
+    pulse["market"] = {
+        **(market or {"id": market_id, "name": market_id}),
+        "state": state,
+        "marketState": state,
+        "isDemo": state == "DEMO",
+    }
+    pulse["marketState"] = state
+    pulse["state"] = state
+    pulse["dataSource"] = ds
+    pulse["ok"] = True
+    return pulse
+
+@api.get("/markets/{market_id}/evidence")
+async def get_market_evidence(market_id: str, dataSource: Optional[str] = None):
+    ds = dataSource or ("DEMO" if market_id.startswith("demo-") else "REAL")
+    query: Dict[str, Any] = {"marketId": market_id, "status": "confirmed"}
+    if ds in ("DEMO", "PILOT", "REAL"):
+        query["dataSource"] = ds
+
+    signals = await db.market_signals.find(query, {"_id": 0}).sort("createdAt", -1).to_list(100)
+    vendors = await db.vendors.find({"marketId": market_id}, {"_id": 0}).to_list(50)
+    demands = await db.shopper_demands.find({"marketId": market_id}, {"_id": 0}).to_list(50)
+
+    clean_signals = []
+    for s in signals:
+        clean = {k: v for k, v in s.items() if k not in ("participantId", "phone", "email")}
+        clean_signals.append(clean)
+
+    return {
+        "ok": True,
+        "marketId": market_id,
+        "dataSource": ds,
+        "signals": clean_signals,
+        "vendors": vendors,
+        "shopperDemands": demands,
+        "counts": {
+            "totalSignals": len(signals),
+            "vendorSignals": sum(1 for s in signals if s.get("source") == "VENDOR"),
+            "shopperSignals": sum(1 for s in signals if s.get("source") == "SHOPPER"),
+            "priceSignals": sum(1 for s in signals if s.get("reportedPrice") is not None),
+        }
+    }
+
+@api.post("/signals/confirm")
+async def confirm_signal(req: ConfirmSignalRequest):
+    sig_id = f"sig-{uuid.uuid4().hex[:10]}"
+    doc = {
+        "id": sig_id,
+        "marketId": req.marketId,
+        "dataSource": req.dataSource,
+        "product": req.product,
+        "signalType": "PRICE" if req.reportedPrice else "AVAILABILITY",
+        "availability": req.availability or "NORMAL",
+        "reportedPrice": req.reportedPrice,
+        "priceUnit": req.priceUnit or "kg",
+        "confidence": req.confidence,
+        "rawText": req.rawText or "",
+        "source": req.source,
+        "vendorName": req.vendorName,
+        "stallName": req.stallName,
+        "status": "confirmed",
+        "createdAt": now_iso(),
+        "expiresAt": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
+    }
+    await db.market_signals.insert_one(doc)
+    return {"ok": True, "signalId": sig_id, "signal": {k: v for k, v in doc.items() if k != "_id"}}
+
+@api.post("/shopper/demand")
+async def submit_shopper_demand(req: ShopperDemandRequest):
+    demand_id = f"dem-{uuid.uuid4().hex[:10]}"
+    doc = {
+        "id": demand_id,
+        "marketId": req.marketId,
+        "dataSource": req.dataSource,
+        "items": req.items,
+        "maxBudget": req.maxBudget,
+        "note": req.note,
+        "createdAt": now_iso(),
+    }
+    await db.shopper_demands.insert_one(doc)
+    for item in req.items:
+        sig_doc = {
+            "id": f"sig-{uuid.uuid4().hex[:10]}",
+            "marketId": req.marketId,
+            "dataSource": req.dataSource,
+            "product": item,
+            "signalType": "DEMAND",
+            "demandLevel": "HIGH",
+            "source": "SHOPPER",
+            "status": "confirmed",
+            "rawText": req.note or f"Shopper requested {item}",
+            "confidence": "HIGH",
+            "createdAt": now_iso(),
+            "expiresAt": (datetime.now(timezone.utc) + timedelta(hours=12)).isoformat(),
+        }
+        await db.market_signals.insert_one(sig_doc)
+    return {"ok": True, "demandId": demand_id, "items": req.items}
+
+@api.post("/vendor/observation")
+async def submit_vendor_observation(req: VendorObservationRequest):
+    obs_id = f"obs-{uuid.uuid4().hex[:10]}"
+    doc = {
+        "id": obs_id,
+        "marketId": req.marketId,
+        "dataSource": req.dataSource,
+        "product": req.product,
+        "price": req.price,
+        "priceUnit": req.priceUnit or "kg",
+        "availability": req.availability or "NORMAL",
+        "note": req.note,
+        "stall": req.stall,
+        "vendorName": req.vendorName,
+        "createdAt": now_iso(),
+    }
+    await db.vendor_observations.insert_one(doc)
+    sig_doc = {
+        "id": f"sig-{uuid.uuid4().hex[:10]}",
+        "marketId": req.marketId,
+        "dataSource": req.dataSource,
+        "product": req.product,
+        "signalType": "PRICE" if req.price is not None else "AVAILABILITY",
+        "availability": req.availability or "NORMAL",
+        "reportedPrice": req.price,
+        "priceUnit": req.priceUnit or "kg",
+        "source": "VENDOR",
+        "vendorName": req.vendorName,
+        "stallName": req.stall,
+        "status": "confirmed",
+        "rawText": req.note or f"Vendor reported {req.product}",
+        "confidence": "HIGH",
+        "createdAt": now_iso(),
+        "expiresAt": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
+    }
+    await db.market_signals.insert_one(sig_doc)
+    return {"ok": True, "observationId": obs_id}
+
+@api.get("/location/reverse")
+async def reverse_geocode_location(lat: float = Query(..., ge=-90, le=90), lng: float = Query(..., ge=-180, le=180)):
+    # 1. Google Maps Geocoding if configured
+    api_key = os.environ.get("GOOGLE_MAPS_API_KEY", "").strip()
+    if api_key:
+        try:
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                res = await client.get(
+                    "https://maps.googleapis.com/maps/api/geocode/json",
+                    params={"latlng": f"{lat},{lng}", "key": api_key, "language": "en"}
+                )
+                if res.status_code == 200:
+                    data = res.json()
+                    if data.get("status") == "OK" and data.get("results"):
+                        res0 = data["results"][0]
+                        components = {c["types"][0]: c["long_name"] for c in res0.get("address_components", []) if c.get("types")}
+                        locality = components.get("sublocality") or components.get("neighborhood") or components.get("locality")
+                        area = components.get("sublocality_level_1") or components.get("administrative_area_level_2")
+                        city = components.get("locality") or components.get("administrative_area_level_2") or "Delhi"
+                        state = components.get("administrative_area_level_1", "Delhi")
+                        country = components.get("country", "India")
+                        return {
+                            "ok": True,
+                            "locality": locality or area or city,
+                            "area": area or locality,
+                            "city": city,
+                            "state": state,
+                            "country": country,
+                            "displayName": f"{locality or area or city}, {city}",
+                            "provider": "GOOGLE_MAPS",
+                            "confidence": "HIGH"
+                        }
+        except Exception as exc:
+            logger.warning("Google geocoding error: %s", exc)
+
+    # 2. OpenStreetMap Nominatim
+    try:
+        async with httpx.AsyncClient(timeout=3.0, headers={"User-Agent": "BazaarMind/1.0 (contact@bazaarmind.org)"}) as client:
+            res = await client.get(
+                "https://nominatim.openstreetmap.org/reverse",
+                params={"lat": lat, "lon": lng, "format": "json"}
+            )
+            if res.status_code == 200:
+                addr = res.json().get("address", {})
+                locality = addr.get("suburb") or addr.get("neighbourhood") or addr.get("residential")
+                area = addr.get("city_district") or addr.get("county") or addr.get("state_district")
+                city = addr.get("city") or addr.get("town") or addr.get("state_district") or "Delhi"
+                state = addr.get("state", "Delhi")
+                country = addr.get("country", "India")
+                display = f"{locality or area or city}, {city}"
+                return {
+                    "ok": True,
+                    "locality": locality or area or city,
+                    "area": area or locality,
+                    "city": city,
+                    "state": state,
+                    "country": country,
+                    "displayName": display,
+                    "provider": "OPENSTREETMAP",
+                    "confidence": "HIGH"
+                }
+    except Exception as exc:
+        logger.warning("OSM geocoding error: %s", exc)
+
+    # 3. Intelligent geographic bounds fallback
+    locality = "Local Area"
+    area = "Neighbourhood"
+    city = "Local Region"
+    state = "India"
+
+    if 28.3 <= lat <= 28.9 and 76.8 <= lng <= 77.5:
+        city = "New Delhi"
+        state = "Delhi"
+        if 28.54 <= lat <= 28.60 and 77.19 <= lng <= 77.24:
+            locality = "Kidwai Nagar / INA"
+            area = "South Delhi"
+        elif 28.56 <= lat <= 28.62 and 77.22 <= lng <= 77.27:
+            locality = "Lajpat Nagar"
+            area = "South East Delhi"
+        elif 28.60 <= lat <= 28.66 and 77.19 <= lng <= 77.24:
+            locality = "Connaught Place"
+            area = "Central Delhi"
+        elif 28.50 <= lat <= 28.56 and 77.16 <= lng <= 77.22:
+            locality = "Hauz Khas"
+            area = "South Delhi"
+        elif 28.60 <= lat <= 28.66 and 77.30 <= lng <= 77.36:
+            locality = "Ghazipur"
+            area = "East Delhi"
+        else:
+            locality = "Delhi NCR"
+            area = "Delhi NCR"
+    elif 18.8 <= lat <= 19.3 and 72.7 <= lng <= 73.1:
+        city = "Mumbai"
+        state = "Maharashtra"
+        locality = "Bandra / South Mumbai"
+        area = "Mumbai Suburban"
+    elif 12.8 <= lat <= 13.1 and 77.4 <= lng <= 77.8:
+        city = "Bengaluru"
+        state = "Karnataka"
+        locality = "Indiranagar / Koramangala"
+        area = "Bengaluru Urban"
+
+    return {
+        "ok": True,
+        "locality": locality,
+        "area": area,
+        "city": city,
+        "state": state,
+        "country": "India",
+        "displayName": f"{locality}, {city}",
+        "provider": "LOCAL_GEO",
+        "confidence": "MEDIUM"
     }
 
 @api.get("/products")

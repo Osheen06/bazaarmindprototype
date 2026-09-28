@@ -11,6 +11,7 @@ import {
   getMarketsNearby,
   discoverNearbyMarkets,
   registerDiscoveredMarket,
+  reverseGeocode,
 } from "../lib/api";
 import { DEFAULT_MARKETS } from "../lib/demoData";
 
@@ -144,6 +145,7 @@ export function AppProvider({ children }) {
   const [nearbyMarkets, setNearbyMarkets] = useState([]);
   const [nearbyResult, setNearbyResult] = useState(null);
   const [locationProvider, setLocationProvider] = useState(null);
+  const [locationArea, setLocationArea] = useState("");
 
   const dataSource = participant ? "PILOT" : "DEMO";
 
@@ -240,10 +242,15 @@ export function AppProvider({ children }) {
       };
       setCoords(nextCoords);
 
-      const [registeredResult, discoveryResult] = await Promise.allSettled([
+      const [registeredResult, discoveryResult, geoResult] = await Promise.allSettled([
         getMarketsNearby(nextCoords.lat, nextCoords.lng, dataSource, 25),
         discoverNearbyMarkets(nextCoords.lat, nextCoords.lng, 10),
+        reverseGeocode(nextCoords.lat, nextCoords.lng),
       ]);
+
+      if (geoResult.status === "fulfilled" && geoResult.value?.displayName) {
+        setLocationArea(geoResult.value.displayName);
+      }
 
       const registered =
         registeredResult.status === "fulfilled"
@@ -372,6 +379,7 @@ export function AppProvider({ children }) {
       locationStatus,
       locationError,
       locationProvider,
+      locationArea,
       nearbyMarkets,
       nearbyResult,
       findNearbyMarkets,
@@ -392,6 +400,7 @@ export function AppProvider({ children }) {
       locationStatus,
       locationError,
       locationProvider,
+      locationArea,
       nearbyMarkets,
       nearbyResult,
       findNearbyMarkets,

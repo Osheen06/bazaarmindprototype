@@ -244,7 +244,7 @@ def _rule_based_interpret(text: str) -> Dict[str, Any]:
 
     # Availability
     availability = "NORMAL"
-    if any(k in raw_lower for k in ["kam aaya", "kam hai", "tight", "shortage", "nahi aaya", "stock kam", "khatam"]):
+    if any(k in raw_lower for k in ["kam aaya", "kam hai", "kam stock", "thoda kam", "tight", "shortage", "nahi aaya", "stock kam", "khatam"]):
         availability = "LOW"
     elif any(k in raw_lower for k in ["bahut hai", "achha stock", "bharpuri", "full stock", "good supply", "good stock", "plenty", "abundant", "lots of"]):
         availability = "HIGH"
@@ -512,8 +512,8 @@ async def ask_bazaar(question: str, market_context: str, session_id: str = "ask"
     off_topic_words = ["cricket", "who won", "match", "score", "president", "weather in", "movie", "film"]
     if any(w in q_lower for w in off_topic_words):
         return (
-            "BazaarMind is dedicated strictly to local neighborhood market intelligence in your selected market. "
-            "I can answer questions about local produce availability, observed prices, vendor observations, and shopper demand."
+            "I can help explain what is happening in your selected market using its available evidence. "
+            "Please ask about produce availability, observed price ranges, demand, or active vendor stalls."
         )
 
     if not is_configured():

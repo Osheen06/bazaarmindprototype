@@ -120,27 +120,29 @@ def build_product_pulse(product: str, signals: List[Dict[str, Any]]) -> Optional
     price_high = round(max(prices), 1) if prices else None
     price_count = len(prices)
 
-    # Explainable confidence calculation
-    v_count = len(vendor_signals)
-    s_count = len(shopper_signals)
     # Explainable confidence calculation & Corroboration Hierarchy
     v_count = len(vendor_signals)
     s_count = len(shopper_signals)
     
     if conflicting:
-        conf = "MEDIUM"
+        conf = "Medium"
+        conf_code = "MEDIUM"
         pattern_status = "MIXED LOCAL SIGNALS"
     elif v_count >= 3 and independent_vendor_count >= 2:
-        conf = "HIGH"
+        conf = "High"
+        conf_code = "HIGH"
         pattern_status = "STRONGER LOCAL SIGNAL"
     elif v_count >= 2 or (v_count >= 1 and s_count >= 2):
-        conf = "MEDIUM"
+        conf = "Medium"
+        conf_code = "MEDIUM"
         pattern_status = "EMERGING PATTERN"
     elif v_count == 1:
-        conf = "EARLY SIGNAL"
+        conf = "Low"
+        conf_code = "LOW"
         pattern_status = "EARLY SIGNAL"
     else:
-        conf = "EARLY SIGNAL"
+        conf = "Low"
+        conf_code = "LOW"
         pattern_status = "EARLY SIGNAL"
 
     # Freshness
@@ -217,6 +219,7 @@ def build_product_pulse(product: str, signals: List[Dict[str, Any]]) -> Optional
         "shopperSignals": s_count,
         "signalCount": len(active),
         "confidence": conf,
+        "confidenceCode": conf_code,
         "patternStatus": pattern_status,
         "conflicting": conflicting,
         "conflictNote": conflict_note,
@@ -232,10 +235,10 @@ def build_product_pulse(product: str, signals: List[Dict[str, Any]]) -> Optional
 def _overall_confidence(products: List[Dict[str, Any]]) -> str:
     if not products:
         return "Early signal"
-    high_count = sum(1 for p in products if p.get("confidence") == "HIGH")
+    high_count = sum(1 for p in products if p.get("confidence") in ("High", "HIGH"))
     if high_count >= len(products) * 0.5:
         return "High"
-    if any(p.get("confidence") in ("HIGH", "MEDIUM") for p in products):
+    if any(p.get("confidence") in ("High", "HIGH", "Medium", "MEDIUM") for p in products):
         return "Medium"
     return "Early signal"
 

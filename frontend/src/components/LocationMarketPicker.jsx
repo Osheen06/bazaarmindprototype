@@ -24,6 +24,7 @@ export default function LocationMarketPicker() {
     locationStatus,
     locationError,
     locationProvider,
+    locationArea,
     nearbyMarkets,
     findNearbyMarkets,
     chooseNearbyMarket,
@@ -174,14 +175,27 @@ export default function LocationMarketPicker() {
 
             {locationStatus === "error" && locationError && (
               <div className="mt-3 rounded-xl border border-[#F0D7C7] bg-[#FFF5EF] px-3 py-2 text-xs text-[#9B4D24]">
-                {locationError}
+                <div className="font-semibold">Location unavailable</div>
+                <div>{locationError}</div>
+                <button
+                  type="button"
+                  onClick={handleLocation}
+                  className="mt-2 text-xs font-semibold text-[#1E5631] underline hover:no-underline"
+                >
+                  Retry location access
+                </button>
               </div>
             )}
 
             {locationStatus === "success" && coords && (
               <div className="mt-3 rounded-xl bg-[#EAF4ED] border border-[#D3E7D8] px-3 py-2 text-xs text-[#1E5631]">
-                Location found. BazaarMind is using it to find nearby market context.
-                {locationProvider ? ` Source: ${locationProvider}.` : ""}
+                <div className="font-semibold">
+                  {locationArea ? `Location detected: ${locationArea}` : "Location detected"}
+                </div>
+                <div className="text-[11px] text-[#3B6E47] mt-0.5">
+                  BazaarMind is searching verified neighbourhood signals near you.
+                  {locationProvider ? ` (${locationProvider})` : ""}
+                </div>
               </div>
             )}
 
@@ -224,17 +238,19 @@ export default function LocationMarketPicker() {
                       </div>
 
                       <span
-                        className={`shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full ${
-                          market.intelligenceAvailable
+                        className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          market.id?.startsWith("demo-") || market.isDemo
+                            ? "bg-[#EFE9DF] text-[#786C5A] border border-[#DDD4C4]"
+                            : market.intelligenceAvailable
                             ? "bg-[#E8F3EB] text-[#1E5631]"
                             : "bg-[#F4F0E7] text-[#8A806E]"
                         }`}
                       >
-                        {market.intelligenceAvailable
-                          ? "Intelligence"
-                          : market.provider === "GOOGLE_PLACES"
-                            ? "Real market · discovery"
-                            : "Discovery only"}
+                        {market.id?.startsWith("demo-") || market.isDemo
+                          ? "DEMO"
+                          : market.intelligenceAvailable
+                          ? "LIVE"
+                          : "DISCOVERED"}
                       </span>
                     </div>
                   </button>
