@@ -60,6 +60,12 @@ AVAILABILITY_ENGLISH = {
     "UNKNOWN": "Unknown availability",
 }
 
+HINDI_NUMBER_WORDS = {
+    "bees": 20, "pachees": 25, "tees": 30, "paintis": 35, "chalis": 40,
+    "paintalis": 45, "pachas": 50, "pachpan": 55, "saath": 60, "saat": 60,
+    "sattar": 70, "assi": 80, "nabbe": 90, "sau": 100
+}
+
 def is_configured() -> bool:
     key = os.environ.get("GEMINI_API_KEY") or GEMINI_API_KEY
     return bool(key)
@@ -238,6 +244,12 @@ def _rule_based_interpret(text: str) -> Dict[str, Any]:
                 price = val
                 break
 
+    if price is None:
+        for word, num in HINDI_NUMBER_WORDS.items():
+            if re.search(r'\b' + word + r'\b', raw_lower):
+                price = float(num)
+                break
+
     price_unit = _explicit_price_unit(text)
     if price is not None and not price_unit:
         price_unit = "kg" if detected_product not in ("Lemon", "Banana", "Coriander", "Spinach") else ("piece" if detected_product == "Lemon" else ("dozen" if detected_product == "Banana" else "bunch"))
@@ -318,6 +330,16 @@ async def interpret_signal(text: Optional[str] = None, image_base64: Optional[st
         norm = normalize_product(data.get("product"))
         if norm:
             data["product"] = norm
+
+        if (data.get("reportedPrice") is None or data.get("reportedPrice") == 0) and text:
+            t_lower = text.lower()
+            for word, num in HINDI_NUMBER_WORDS.items():
+                if re.search(r'\b' + word + r'\b', t_lower):
+                    data["reportedPrice"] = float(num)
+                    if not data.get("priceUnit"):
+                        data["priceUnit"] = _explicit_price_unit(text) or "kg"
+                    data["signalType"] = "PRICE"
+                    break
 
         data["confirmationText"] = _format_vendor_confirmation(
             data.get("product", "Produce"),
