@@ -698,9 +698,13 @@ async def shopping_list_parse(req: ShoppingListRequest):
         logger.exception("list parse failed")
         return JSONResponse(status_code=200, content={"ok": False, "error": "BazaarMind couldn't read that list right now. Please try again."})
 
-    data_source = await _resolve_source_async(req.participantId, None)
+    data_source = await _resolve_source_async(req.participantId, getattr(req, "dataSource", None))
     pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=data_source)
-    pulse_map = {p["product"]: p for p in pulse["products"]}
+    if not pulse.get("products") and (data_source == "PILOT" or str(req.marketId).startswith("demo-")):
+        demo_pulse = await intelligence.compute_market_pulse(db, "demo-ina", data_source="DEMO")
+        if demo_pulse.get("products"):
+            pulse = demo_pulse
+    pulse_map = {p["product"]: p for p in pulse.get("products", [])}
 
     items, tight = [], 0
     for it in parsed.get("items", []):
@@ -758,6 +762,10 @@ async def shopper_parse_alias(req: ShoppingListRequest):
 async def plan_shopper_route_endpoint(req: PlanRouteRequest):
     data_source = req.dataSource or "DEMO"
     pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=data_source)
+    if not pulse.get("products") and (data_source == "PILOT" or str(req.marketId).startswith("demo-")):
+        demo_pulse = await intelligence.compute_market_pulse(db, "demo-ina", data_source="DEMO")
+        if demo_pulse.get("products"):
+            pulse = demo_pulse
     market = await db.markets.find_one({"id": req.marketId}, {"_id": 0})
     market_name = market["name"] if market else "INA Market · South Delhi"
 
@@ -767,7 +775,13 @@ async def plan_shopper_route_endpoint(req: PlanRouteRequest):
         {"_id": 0}
     ).to_list(100)
 
-    if not locations and data_source == "DEMO" and req.marketId == "demo-ina":
+    if not locations:
+        locations = await db.vendor_locations.find(
+            {"marketId": "demo-ina", "dataSource": "DEMO", "active": True},
+            {"_id": 0}
+        ).to_list(100)
+
+    if not locations:
         locations = [
             {"vendorId": "v1", "vendorName": "Ramesh Sabzi Wala", "stallName": "Stall 3 · Fresh Greens", "lat": 28.56885, "lng": 77.20925},
             {"vendorId": "v2", "vendorName": "Sharma Fruits", "stallName": "Stall 7 · Fruit Row", "lat": 28.56895, "lng": 77.20950},
@@ -816,7 +830,6 @@ async def ask_bazaar(req: AskRequest):
     pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=req.dataSource)
     market = await db.markets.find_one({"id": req.marketId}, {"_id": 0})
     market_name = market["name"] if market else "INA Market · South Delhi"
-
     # Intelligent fallback: If no products were found in the requested market/dataSource slice
     # (e.g. user is in PILOT participant mode where real field signals haven't accumulated yet,
     # or user selected a demo market like Sarojini or Ghazipur that relies on benchmark demo signals):

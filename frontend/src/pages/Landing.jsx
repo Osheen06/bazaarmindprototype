@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { trackEvent } from "../lib/api";
 import BuiltWithGeminiModal from "../components/BuiltWithGeminiModal";
+import PitchModeModal from "../components/PitchModeModal";
 import ConceptualLeapVisualizer from "../components/ConceptualLeapVisualizer";
 import TomorrowCityResilience from "../components/TomorrowCityResilience";
 
@@ -95,6 +96,7 @@ export default function Landing() {
   const navigate = useNavigate();
   const [activeVoiceStep, setActiveVoiceStep] = useState(0);
   const [showGeminiModal, setShowGeminiModal] = useState(false);
+  const [showPitchModal, setShowPitchModal] = useState(false);
 
   useEffect(() => {
     trackEvent("landing_viewed");
@@ -152,6 +154,13 @@ export default function Landing() {
 
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setShowPitchModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#1E5631] text-[#FDFBF7] hover:bg-[#164024] px-3.5 py-1.5 text-xs font-bold shadow-xs transition-all hover:scale-105 active:scale-95"
+            data-testid="landing-pitch-btn"
+          >
+            <span>🎯 Pitch Mode (5 Steps)</span>
+          </button>
+          <button
             onClick={() => setShowGeminiModal(true)}
             className="inline-flex items-center gap-1.5 rounded-full bg-[#1E2022] text-[#FDFBF7] hover:bg-[#2C3033] px-3.5 py-1.5 text-xs font-bold border border-emerald-500/40 shadow-xs transition-all hover:scale-105 active:scale-95"
             data-testid="landing-gemini-btn"
@@ -159,9 +168,9 @@ export default function Landing() {
             <Sparkles className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
             <span>Built with Gemini</span>
           </button>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3.5 py-1.5 text-xs font-bold text-amber-800 shadow-2xs">
+          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3.5 py-1.5 text-xs font-bold text-amber-800 shadow-2xs">
             <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-            DEMO ENVIRONMENT · SYNTHETIC SIGNALS
+            DEMO ENVIRONMENT
           </span>
         </div>
       </header>
@@ -208,14 +217,22 @@ export default function Landing() {
               className="mt-8 flex flex-wrap gap-3.5"
             >
               <button
+                onClick={() => setShowPitchModal(true)}
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#1E5631] px-7 py-3.5 text-[#FDFBF7] font-bold text-sm hover:bg-[#164024] transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+                data-testid="hero-pitch-cta"
+              >
+                <span>🎯 Pitch Mode (5-Step Live Demo)</span>
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
                 onClick={() => {
                   trackEvent("hero_cta_pulse");
                   navigate("/pulse");
                 }}
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#1E5631] px-7 py-3.5 text-[#FDFBF7] font-bold text-sm hover:bg-[#164024] transition-all shadow-md hover:shadow-lg"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-white border border-[#E5DEC9] px-6 py-3.5 text-[#1E2022] font-bold text-sm hover:bg-[#F7F4EE] transition-all shadow-xs"
               >
                 <span>⚡ Explore Market Pulse</span>
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button
@@ -563,6 +580,7 @@ export default function Landing() {
         </div>
       </footer>
       <BuiltWithGeminiModal isOpen={showGeminiModal} onClose={() => setShowGeminiModal(false)} />
+      <PitchModeModal isOpen={showPitchModal} onClose={() => setShowPitchModal(false)} />
     </div>
   );
 }
