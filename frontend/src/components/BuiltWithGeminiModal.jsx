@@ -71,7 +71,7 @@ export default function BuiltWithGeminiModal({ isOpen, onClose }) {
     setResult(null);
     const start = performance.now();
     try {
-      const res = await interpretSignal({ text: testInput });
+      const res = await interpretSignal(testInput, null);
       setLatency(Math.round(performance.now() - start));
       setResult(res);
     } catch (err) {

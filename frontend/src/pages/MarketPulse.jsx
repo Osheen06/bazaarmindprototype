@@ -121,7 +121,7 @@ export default function MarketPulse() {
             transition={{ duration: 0.3 }}
             className="mt-5 overflow-hidden"
           >
-            <MarketRadarMap marketName={market?.name || "INA Market · South Delhi"} />
+            <MarketRadarMap marketName={pulse?.market?.name || "INA Market · South Delhi"} />
           </motion.div>
         )}
       </AnimatePresence>
