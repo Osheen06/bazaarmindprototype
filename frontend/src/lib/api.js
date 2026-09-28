@@ -383,12 +383,7 @@ export const getVendorDemand = (marketId, dataSource = "DEMO") =>
     .get("/vendor/demand", {
       params: { marketId, dataSource },
     })
-    .then((r) => {
-      if (r.data && r.data.products && r.data.products.length > 0) {
-        return r.data;
-      }
-      return DEFAULT_DEMAND;
-    })
+    .then((r) => r.data)
     .catch(() => DEFAULT_DEMAND);
 
 export const getMarketNetwork = (marketId, dataSource = "DEMO") =>
