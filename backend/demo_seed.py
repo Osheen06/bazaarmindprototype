@@ -241,10 +241,18 @@ def _build_snapshots() -> List[Dict[str, Any]]:
         },
         {
             "id": "snap-yesterday", "marketId": DEMO_MARKET["id"], "label": "Yesterday",
-            "capturedAt": _iso(now - timedelta(days=1)), "synthetic": False, "dataSource": "DEMO",
+            "capturedAt": _iso(now - timedelta(days=1)), "synthetic": True, "dataSource": "DEMO",
             "changes": [
                 {"product": "Onions", "field": "price", "from": "₹28/kg", "to": "₹32/kg"},
                 {"product": "Spinach", "field": "availability", "from": "Good", "to": "Limited"},
+            ],
+        },
+        {
+            "id": "snap-7days", "marketId": DEMO_MARKET["id"], "label": "7 days ago",
+            "capturedAt": _iso(now - timedelta(days=7)), "synthetic": True, "dataSource": "DEMO",
+            "changes": [
+                {"product": "Tomatoes", "field": "price", "from": "₹45/kg", "to": "₹65/kg"},
+                {"product": "Potatoes", "field": "availability", "from": "Normal", "to": "Good"},
             ],
         },
     ]

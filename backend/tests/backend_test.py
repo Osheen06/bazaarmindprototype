@@ -149,9 +149,10 @@ def test_signal_confirmed_and_reflected(s):
     tom_before = next(p for p in baseline["products"] if p["product"] == "Tomatoes")
     obs_before = tom_before["vendorObservations"]
 
+    unique_vendor = f"TEST vendor {time.time()}"
     payload = {"product": "Tomatoes", "signalType": "SUPPLY", "availability": "LOW",
                "reportedPrice": 58, "priceUnit": "kg", "rawText": "TEST_ tamatar kam hai",
-               "vendorId": "v1", "vendorName": "TEST vendor", "source": "VENDOR"}
+               "vendorId": "v1", "vendorName": unique_vendor, "source": "VENDOR"}
     r = s.post(f"{API}/signals", json=payload, timeout=TIMEOUT)
     assert r.status_code == 200
     d = r.json()

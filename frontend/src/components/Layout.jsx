@@ -20,6 +20,7 @@ import {
 
 import LocationMarketPicker from "./LocationMarketPicker";
 import PitchModeModal from "./PitchModeModal";
+import BuiltWithGeminiModal from "./BuiltWithGeminiModal";
 import { useApp } from "../context/AppContext";
 
 const MOBILE_NAV = [
@@ -148,6 +149,7 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [showPitchModal, setShowPitchModal] = useState(false);
+  const [showGeminiModal, setShowGeminiModal] = useState(false);
 
   const {
     currentMarket,
@@ -249,6 +251,16 @@ export default function Layout({ children }) {
 
               <div className="flex items-center gap-2 ml-auto">
                 <button
+                  onClick={() => setShowGeminiModal(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1E2022] text-[#FDFBF7] hover:bg-[#2C3033] px-3 py-1.5 text-xs font-bold border border-emerald-500/40 shadow-xs transition-all hover:scale-105 active:scale-95"
+                  data-testid="gemini-inspector-trigger-btn"
+                  title="Inspect Live Gemini Engine & Co-Creation Blueprint"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
+                  <span className="hidden sm:inline">Built with Gemini</span>
+                  <span className="sm:hidden">Gemini</span>
+                </button>
+                <button
                   onClick={() => setShowPitchModal(true)}
                   className="inline-flex items-center gap-1.5 rounded-full bg-[#1E5631] text-[#FDFBF7] hover:bg-[#153e23] px-3 py-1.5 text-xs font-bold shadow-sm transition-all hover:scale-105 active:scale-95"
                   data-testid="pitch-mode-trigger-btn"
@@ -338,6 +350,7 @@ export default function Layout({ children }) {
       </nav>
 
       <PitchModeModal isOpen={showPitchModal} onClose={() => setShowPitchModal(false)} />
+      <BuiltWithGeminiModal isOpen={showGeminiModal} onClose={() => setShowGeminiModal(false)} />
     </div>
   );
 }

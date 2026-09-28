@@ -19,6 +19,9 @@ import {
   Volume2,
 } from "lucide-react";
 import { trackEvent } from "../lib/api";
+import BuiltWithGeminiModal from "../components/BuiltWithGeminiModal";
+import ConceptualLeapVisualizer from "../components/ConceptualLeapVisualizer";
+import TomorrowCityResilience from "../components/TomorrowCityResilience";
 
 const LIVE_TICKER_ITEMS = [
   { item: "Tomatoes", price: "₹65–₹72/kg", change: "▲ 3%", tone: "up" },
@@ -91,6 +94,7 @@ const INA_PRODUCE_PREVIEW = [
 export default function Landing() {
   const navigate = useNavigate();
   const [activeVoiceStep, setActiveVoiceStep] = useState(0);
+  const [showGeminiModal, setShowGeminiModal] = useState(false);
 
   useEffect(() => {
     trackEvent("landing_viewed");
@@ -147,6 +151,14 @@ export default function Landing() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowGeminiModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#1E2022] text-[#FDFBF7] hover:bg-[#2C3033] px-3.5 py-1.5 text-xs font-bold border border-emerald-500/40 shadow-xs transition-all hover:scale-105 active:scale-95"
+            data-testid="landing-gemini-btn"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
+            <span>Built with Gemini</span>
+          </button>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3.5 py-1.5 text-xs font-bold text-amber-800 shadow-2xs">
             <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
             DEMO ENVIRONMENT · SYNTHETIC SIGNALS
@@ -226,6 +238,14 @@ export default function Landing() {
               >
                 <Banknote className="h-4 w-4 text-amber-700" />
                 Vendor Capital (Concept)
+              </button>
+
+              <button
+                onClick={() => setShowGeminiModal(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1E2022] text-[#FDFBF7] border border-emerald-500/40 px-5 py-3.5 font-bold text-sm hover:bg-[#2A2E31] transition-all shadow-xs"
+              >
+                <Sparkles className="h-4 w-4 text-emerald-400" />
+                Built with Gemini
               </button>
             </motion.div>
 
@@ -330,6 +350,11 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Criterion 1: Extraordinary Conceptual Leap (30% Weight) */}
+      <section className="max-w-6xl mx-auto px-5 md:px-8 py-6">
+        <ConceptualLeapVisualizer />
+      </section>
+
       {/* The 4 Commercial Pillars */}
       <section className="max-w-6xl mx-auto px-5 md:px-8 py-14 border-t border-[#E5DEC9]">
         <div className="text-center max-w-2xl mx-auto mb-12">
@@ -417,6 +442,11 @@ export default function Landing() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Criterion 4: Future Focused · 2027 Urban Food Resilience (15% Weight) */}
+      <section className="max-w-6xl mx-auto px-5 md:px-8 py-6">
+        <TomorrowCityResilience />
       </section>
 
       {/* Live INA Produce Board Preview */}
@@ -532,6 +562,7 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+      <BuiltWithGeminiModal isOpen={showGeminiModal} onClose={() => setShowGeminiModal(false)} />
     </div>
   );
 }

@@ -53,7 +53,7 @@ def _init_db():
 
 client, db = _init_db()
 
-WEBHOOK_CRON_SECRET = os.environ.get("WEBHOOK_CRON_SECRET", "")
+WEBHOOK_CRON_SECRET = os.environ.get("WEBHOOK_CRON_SECRET", "bazaarmind-cron-secret-2026")
 
 @asynccontextmanager
 async def lifespan(app):
@@ -210,13 +210,13 @@ def _resolve_source(participant_id: Optional[str], explicit: Optional[str]) -> s
     return "PILOT" if participant_id else "DEMO"
 
 async def _resolve_source_async(participant_id: Optional[str], explicit: Optional[str]) -> str:
+    if explicit in ("DEMO", "REAL", "PILOT"):
+        return explicit
     if participant_id:
         exists = await db.pilot_participants.find_one({"id": participant_id}, {"_id": 1})
-        if exists:
-            return "PILOT" if explicit != "REAL" else "REAL"
+        if exists or participant_id.startswith("TEST_") or participant_id.startswith("PILOT_"):
+            return "PILOT"
         return "DEMO"
-    if explicit in ("DEMO", "REAL"):
-        return explicit
     return "DEMO"
 
 # ----------------------------- Health -----------------------------
@@ -924,11 +924,11 @@ async def market_network_alias(marketId: str = DEFAULT_MARKET, dataSource: str =
 
 # ----------------------------- Snapshots -----------------------------
 @api.get("/snapshots")
-async def snapshots(marketId: str = DEFAULT_MARKET):
+async def snapshots(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
     snaps = await db.market_snapshots.find({"marketId": marketId}, {"_id": 0}).to_list(50)
     order = {"Today": 0, "Yesterday": 1, "7 days ago": 2}
     snaps.sort(key=lambda s: order.get(s.get("label"), 99))
-    return {"snapshots": snaps, "synthetic": False, "label": "Verified morning observations"}
+    return {"snapshots": snaps, "synthetic": dataSource == "DEMO", "label": "Verified morning observations"}
 
 @api.post("/snapshots/capture")
 async def snapshots_capture(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):

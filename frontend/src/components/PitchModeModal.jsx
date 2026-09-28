@@ -12,6 +12,7 @@ import {
   Loader2,
   MapPin,
   ShoppingBag,
+  Volume2,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import {
@@ -48,7 +49,21 @@ export default function PitchModeModal({ isOpen, onClose }) {
 
   // Step 5: Anti-Contamination state
   const [guardLoading, setGuardLoading] = useState(false);
-  const [guardAnswer, setGuardAnswer] = useState("");
+  // Audio speech synthesis state
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  const speakText = (text) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "hi-IN";
+      utterance.rate = 0.95;
+      utterance.onstart = () => setIsPlayingAudio(true);
+      utterance.onend = () => setIsPlayingAudio(false);
+      utterance.onerror = () => setIsPlayingAudio(false);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -249,6 +264,15 @@ export default function PitchModeModal({ isOpen, onClose }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => speakText(vendorText)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F7F4EE] border border-[#E5DEC9] text-[#1E2022] text-xs font-semibold hover:bg-[#EFE9DA] transition-all"
+                title="Play voice audio out loud"
+              >
+                <Volume2 className={`h-3.5 w-3.5 text-[#1E5631] ${isPlayingAudio ? "animate-pulse text-emerald-600" : ""}`} />
+                <span>{isPlayingAudio ? "Speaking Voice…" : "🔊 Play Voice Note"}</span>
+              </button>
+
               <button
                 onClick={handleTestVendor}
                 disabled={vendorLoading}
