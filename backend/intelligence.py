@@ -248,9 +248,8 @@ async def compute_market_pulse(db, market_id: str, data_source: Optional[str] = 
         "marketId": market_id,
         "status": "confirmed",
     }
-    effective_ds = "DEMO" if (market_id and market_id.startswith("demo-")) else data_source
-    if effective_ds in ("DEMO", "PILOT", "REAL"):
-        query["dataSource"] = effective_ds
+    if data_source in ("DEMO", "PILOT", "REAL"):
+        query["dataSource"] = data_source
 
     projection = {
         "_id": 0,
@@ -739,7 +738,7 @@ async def compute_wastage_reduction(db, market_id: str = "demo-ina", data_source
 
 async def compute_exotic_heatmap(db, area: str = "South Delhi") -> Dict[str, Any]:
     """Module 14: South Delhi Exotic Produce Geographic Cluster Heatmap.
-    Strict privacy: N >= 5 thresholding, anonymized centroids only.
+    Strict privacy: $N \ge 5$ thresholding, anonymized centroids only.
     """
     clusters = [
         {
@@ -815,7 +814,7 @@ async def compute_exotic_heatmap(db, area: str = "South Delhi") -> Dict[str, Any
         "totalClusters": len(clusters),
         "totalAnonymizedSignals": sum(c["signalCount"] for c in clusters),
         "clusters": clusters,
-        "privacyNotice": "Aggregation threshold enforced: N >= 5 signals. Zero individual household locations or PII exposed.",
+        "privacyNotice": "Aggregation threshold enforced: $N \ge 5$ signals. Zero individual household locations or PII exposed.",
         "status": "ADVANCED INTELLIGENCE / PILOT READY",
     }
 

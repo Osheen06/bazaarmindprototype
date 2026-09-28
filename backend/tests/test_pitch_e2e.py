@@ -28,6 +28,7 @@ import demo_seed
 def client():
     # Use TestClient with lifespan context manager so seed_if_empty runs
     with TestClient(app) as test_client:
+        test_client.post("/api/demo/reset")
         yield test_client
 
 

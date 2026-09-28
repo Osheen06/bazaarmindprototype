@@ -20,51 +20,30 @@ from google.genai import types
 logger = logging.getLogger(__name__)
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-_model_env = os.environ.get("GEMINI_MODEL", "")
-GEMINI_MODEL = _model_env if _model_env and _model_env != "gemini-3.5-flash-lite" else "gemini-2.5-flash"
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 CANONICAL_PRODUCTS = [
     "Tomatoes", "Potatoes", "Onions", "Coriander",
-    "Lemon", "Banana", "Apple", "Mangoes", "Chilli", "Ginger", "Garlic",
-    "Carrots", "Spinach", "Cucumber", "Cauliflower", "Cabbage", "Green Peas",
-    "Okra", "Papaya", "Oranges", "Pomegranate", "Watermelon", "Grapes",
-    "Avocados", "Mushrooms", "Bell Peppers", "Bok Choy", "Bottle Gourd",
-    "Bitter Gourd", "Eggplant", "Radish", "Beetroot",
+    "Lemon", "Banana", "Apple", "Chilli", "Ginger",
+    "Carrots", "Spinach", "Avocados", "Mushrooms", "Bell Peppers", "Bok Choy",
 ]
 
 PRODUCT_ALIASES = {
     "tamatar": "Tomatoes", "tomato": "Tomatoes", "tomatoes": "Tomatoes", "टमाटर": "Tomatoes",
-    "aloo": "Potatoes", "potato": "Potatoes", "potatoes": "Potatoes", "alu": "Potatoes", "batata": "Potatoes", "आलू": "Potatoes",
+    "aloo": "Potatoes", "potato": "Potatoes", "potatoes": "Potatoes", "alu": "Potatoes", "आलू": "Potatoes",
     "pyaz": "Onions", "pyaaz": "Onions", "onion": "Onions", "onions": "Onions", "kanda": "Onions", "प्याज": "Onions", "प्याज़": "Onions",
     "dhaniya": "Coriander", "dhania": "Coriander", "coriander": "Coriander", "cilantro": "Coriander", "धनिया": "Coriander",
     "nimbu": "Lemon", "neebu": "Lemon", "lemon": "Lemon", "lemons": "Lemon", "lime": "Lemon", "नींबू": "Lemon", "नीबू": "Lemon",
     "kela": "Banana", "banana": "Banana", "bananas": "Banana", "केला": "Banana",
     "seb": "Apple", "saib": "Apple", "apple": "Apple", "apples": "Apple", "सेब": "Apple",
-    "mango": "Mangoes", "mangoes": "Mangoes", "aam": "Mangoes", "आम": "Mangoes",
     "hari mirch": "Chilli", "mirch": "Chilli", "chili": "Chilli", "chilli": "Chilli", "chillies": "Chilli", "chilies": "Chilli", "green chili": "Chilli", "green chilies": "Chilli", "मिर्च": "Chilli", "हरी मिर्च": "Chilli",
     "adrak": "Ginger", "adrakh": "Ginger", "ginger": "Ginger", "अदरक": "Ginger",
-    "garlic": "Garlic", "lahsun": "Garlic", "lehsun": "Garlic", "लहसुन": "Garlic",
     "gajar": "Carrots", "carrot": "Carrots", "carrots": "Carrots", "गाजर": "Carrots",
     "palak": "Spinach", "spinach": "Spinach", "पालक": "Spinach",
-    "kheera": "Cucumber", "khira": "Cucumber", "cucumber": "Cucumber", "cucumbers": "Cucumber", "खीरा": "Cucumber",
-    "gobhi": "Cauliflower", "gobi": "Cauliflower", "phool gobi": "Cauliflower", "cauliflower": "Cauliflower", "गोभी": "Cauliflower", "फूलगोभी": "Cauliflower",
-    "patta gobhi": "Cabbage", "patta gobi": "Cabbage", "cabbage": "Cabbage", "bandh gobi": "Cabbage", "पत्ता गोभी": "Cabbage",
-    "matar": "Green Peas", "mutter": "Green Peas", "peas": "Green Peas", "green peas": "Green Peas", "मटर": "Green Peas",
-    "bhindi": "Okra", "okra": "Okra", "ladyfinger": "Okra", "भिंडी": "Okra",
-    "papita": "Papaya", "papaya": "Papaya", "पपीता": "Papaya",
-    "santra": "Oranges", "santara": "Oranges", "orange": "Oranges", "oranges": "Oranges", "mosambi": "Oranges", "संतरा": "Oranges", "मौसमी": "Oranges",
-    "anar": "Pomegranate", "anaar": "Pomegranate", "pomegranate": "Pomegranate", "अनार": "Pomegranate",
-    "tarbooz": "Watermelon", "tarbuz": "Watermelon", "watermelon": "Watermelon", "तरबूज": "Watermelon",
-    "angoor": "Grapes", "grapes": "Grapes", "अंगूर": "Grapes",
     "avocado": "Avocados", "avocados": "Avocados", "makhanphal": "Avocados", "एवोकाडो": "Avocados",
     "mushroom": "Mushrooms", "mushrooms": "Mushrooms", "khumbi": "Mushrooms", "मशरूम": "Mushrooms",
     "shimla mirch": "Bell Peppers", "shimlamirch": "Bell Peppers", "capsicum": "Bell Peppers", "bell pepper": "Bell Peppers", "bell peppers": "Bell Peppers", "शिमला मिर्च": "Bell Peppers",
     "bok choy": "Bok Choy", "pak choi": "Bok Choy", "bokchoy": "Bok Choy",
-    "lauki": "Bottle Gourd", "ghiya": "Bottle Gourd", "bottle gourd": "Bottle Gourd", "लौकी": "Bottle Gourd", "घिया": "Bottle Gourd",
-    "karela": "Bitter Gourd", "bitter gourd": "Bitter Gourd", "करेला": "Bitter Gourd",
-    "baingan": "Eggplant", "brinjal": "Eggplant", "eggplant": "Eggplant", "बैंगन": "Eggplant",
-    "mooli": "Radish", "muli": "Radish", "radish": "Radish", "मूली": "Radish",
-    "chukandar": "Beetroot", "beetroot": "Beetroot", "चुकंदर": "Beetroot",
 }
 
 AVAILABILITY_HINDI = {
@@ -134,52 +113,27 @@ def _extract_json(text: str) -> Any:
         cleaned = match.group(1).strip()
     return json.loads(cleaned)
 
-HINDI_NAMES = {
-    "Tomatoes": "टमाटर",
-    "Onions": "प्याज़",
-    "Potatoes": "आलू",
-    "Coriander": "धनिया",
-    "Lemon": "नींबू",
-    "Banana": "केला",
-    "Apple": "सेब",
-    "Mangoes": "आम",
-    "Chilli": "हरी मिर्च",
-    "Ginger": "अदरक",
-    "Garlic": "लहसुन",
-    "Carrots": "गाजर",
-    "Spinach": "पालक",
-    "Cucumber": "खीरा",
-    "Cauliflower": "गोभी",
-    "Cabbage": "पत्ता गोभी",
-    "Green Peas": "मटर",
-    "Okra": "भिंडी",
-    "Papaya": "पपीता",
-    "Oranges": "संतरा",
-    "Pomegranate": "अनार",
-    "Watermelon": "तरबूज",
-    "Grapes": "अंगूर",
-    "Avocados": "एवोकाडो",
-    "Mushrooms": "मशरूम",
-    "Bell Peppers": "शिमला मिर्च",
-    "Bok Choy": "पाक चोई",
-    "Bottle Gourd": "लौकी",
-    "Bitter Gourd": "करेला",
-    "Eggplant": "बैंगन",
-    "Radish": "मूली",
-    "Beetroot": "चुकंदर",
-}
-
-def _is_greeting(text: str) -> bool:
-    clean = re.sub(r'[^\w\s]', '', text or "").strip().lower()
-    return clean in (
-        "hi", "hii", "hiii", "hello", "hey", "namaste", "pranam", "kya haal hai",
-        "good morning", "good evening", "namaskar", "namaste ji", "radhe radhe"
-    )
-
 def _format_vendor_confirmation(product: str, availability: str, price: Optional[float], price_unit: Optional[str], lang: str) -> str:
     # Localized natural confirmation
     if lang in ("HINDI", "HINGLISH"):
-        prod_hi = HINDI_NAMES.get(product, product)
+        prod_hi = next((p["hindi"] for p in [
+            {"name": "Tomatoes", "hindi": "टमाटर"},
+            {"name": "Onions", "hindi": "प्याज़"},
+            {"name": "Potatoes", "hindi": "आलू"},
+            {"name": "Coriander", "hindi": "धनिया"},
+            {"name": "Lemon", "hindi": "नींबू"},
+            {"name": "Banana", "hindi": "केला"},
+            {"name": "Apple", "hindi": "सेब"},
+            {"name": "Chilli", "hindi": "हरी मिर्च"},
+            {"name": "Ginger", "hindi": "अदरक"},
+            {"name": "Carrots", "hindi": "गाजर"},
+            {"name": "Spinach", "hindi": "पालक"},
+            {"name": "Avocados", "hindi": "एवोकाडो"},
+            {"name": "Mushrooms", "hindi": "मशरूम"},
+            {"name": "Bell Peppers", "hindi": "शिमला मिर्च"},
+            {"name": "Bok Choy", "hindi": "पाक चोई"},
+        ] if p["name"] == product), product)
+
         avail_text = AVAILABILITY_HINDI.get(availability, "सामान्य उपलब्धता")
         lines = [f"मैंने समझा:\n\n{prod_hi}\n{avail_text}"]
         if price is not None:
@@ -196,13 +150,27 @@ def _format_vendor_confirmation(product: str, availability: str, price: Optional
 
 def format_shopper_confirmation(items: List[Dict[str, Any]], lang: str = "HINGLISH") -> str:
     """Format shopper confirmation in user's language preserving exact phrasing."""
-    if not items:
-        return ""
     if lang in ("HINDI", "HINGLISH"):
         lines = ["मैंने समझा:"]
         for it in items:
             p = it.get("product")
-            prod_hi = HINDI_NAMES.get(p, p)
+            prod_hi = next((x["hindi"] for x in [
+                {"name": "Tomatoes", "hindi": "टमाटर"},
+                {"name": "Onions", "hindi": "प्याज़"},
+                {"name": "Potatoes", "hindi": "आलू"},
+                {"name": "Coriander", "hindi": "धनिया"},
+                {"name": "Lemon", "hindi": "नींबू"},
+                {"name": "Banana", "hindi": "केला"},
+                {"name": "Apple", "hindi": "सेब"},
+                {"name": "Chilli", "hindi": "हरी मिर्च"},
+                {"name": "Ginger", "hindi": "अदरक"},
+                {"name": "Carrots", "hindi": "गाजर"},
+                {"name": "Spinach", "hindi": "पालक"},
+                {"name": "Avocados", "hindi": "एवोकाडो"},
+                {"name": "Mushrooms", "hindi": "मशरूम"},
+                {"name": "Bell Peppers", "hindi": "शिमला मिर्च"},
+                {"name": "Bok Choy", "hindi": "पाक चोई"},
+            ] if x["name"] == p), p)
             q = it.get("quantity") or ""
             q_clean = q.replace("kilos", "किलो").replace("kilo", "किलो").replace("kg", "किलो")
             lines.append(f"{q_clean} {prod_hi}".strip() if q_clean else prod_hi)
@@ -252,57 +220,38 @@ Core ground rules:
 """
 
 def _rule_based_interpret(text: str) -> Dict[str, Any]:
-    raw = (text or "").strip()
-    dev_digits = str.maketrans("०१२३४५६७८९", "0123456789")
-    raw_normalized = raw.translate(dev_digits)
-    raw_lower = raw_normalized.lower()
-
+    raw_lower = (text or "").lower().strip()
     detected_product = "Produce"
     for alias, canon in PRODUCT_ALIASES.items():
-        if alias in raw_lower:
+        if re.search(r'\b' + re.escape(alias) + r'\b', raw_lower):
             detected_product = canon
             break
 
-    # Price extraction supporting Devanagari and Latin keywords
+    # Price extraction
     price = None
-    price_keywords = [
-        "rate", "rupaye", "rs", "bhav", "per", "/", "₹", "hai",
-        "चल रहा", "रेट", "रुपये", "रुपए", "रु", "भाव", "किलो", "प्रति", "है", "का भाव"
-    ]
-    has_price_kw = any(k in raw_lower for k in price_keywords)
-    cand_matches = re.findall(r'\b(\d{1,4})\b', raw_lower)
-    for cand in cand_matches:
-        val = float(cand)
-        if 5 <= val <= 500 and has_price_kw:
-            price = val
-            break
+    price_match = re.search(r'(?:₹|rs\.?|rate|bhav)?\s*(\d+(?:\.\d+)?)\s*(?:rupaye|rs|rupya|₹|per\s*kg|/kg)?', raw_lower)
+    if price_match:
+        cand_matches = re.findall(r'\b(\d{1,4})\b', raw_lower)
+        for cand in cand_matches:
+            val = float(cand)
+            if 5 <= val <= 500 and ("rate" in raw_lower or "rupaye" in raw_lower or "rs" in raw_lower or "bhav" in raw_lower or "per" in raw_lower or "/" in raw_lower or "₹" in raw_lower or "hai" in raw_lower):
+                price = val
+                break
 
     price_unit = _explicit_price_unit(text)
     if price is not None and not price_unit:
         price_unit = "kg" if detected_product not in ("Lemon", "Banana", "Coriander", "Spinach") else ("piece" if detected_product == "Lemon" else ("dozen" if detected_product == "Banana" else "bunch"))
 
-    # Availability with Devanagari and English keywords
+    # Availability
     availability = "NORMAL"
-    low_keywords = [
-        "कम आया", "कम है", "कम स्टॉक", "थोड़ा कम", "स्टॉक कम", "खत्म", "शॉर्टेज", "नहीं आया", "बची है", "बचा है", "माल कम", "कम",
-        "kam aaya", "kam hai", "kam stock", "thoda kam", "tight", "shortage", "nahi aaya", "stock kam", "khatam"
-    ]
-    high_keywords = [
-        "बहुत है", "भरपूर", "अच्छा स्टॉक", "फुल स्टॉक", "नया स्टॉक", "खूब आया", "बढ़िया",
-        "bahut hai", "achha stock", "bharpuri", "full stock", "good supply", "good stock", "plenty", "abundant", "lots of"
-    ]
-    if any(k in raw_lower for k in low_keywords):
+    if any(k in raw_lower for k in ["kam aaya", "kam hai", "kam stock", "thoda kam", "tight", "shortage", "nahi aaya", "stock kam", "khatam"]):
         availability = "LOW"
-    elif any(k in raw_lower for k in high_keywords):
+    elif any(k in raw_lower for k in ["bahut hai", "achha stock", "bharpuri", "full stock", "good supply", "good stock", "plenty", "abundant", "lots of"]):
         availability = "HIGH"
 
-    # Demand with Devanagari and English keywords
+    # Demand
     demand = "NORMAL"
-    demand_keywords = [
-        "चाहिए", "मांग", "भीड़", "बहुत बिक रहा", "बिक रहा", "माँग",
-        "chahiye", "need", "want", "mang", "bheed", "bahut bik", "bik raha"
-    ]
-    if any(k in raw_lower for k in demand_keywords):
+    if any(k in raw_lower for k in ["chahiye", "need", "want", "mang", "bheed", "bahut bik", "bik raha"]):
         demand = "HIGH"
 
     # Language detection
@@ -330,12 +279,6 @@ def _rule_based_interpret(text: str) -> Dict[str, Any]:
 
 async def interpret_signal(text: Optional[str] = None, image_base64: Optional[str] = None, session_id: str = "default") -> Dict[str, Any]:
     del session_id
-    # Blazing-fast path: If text has clean high-confidence local parse and no image, return in <1ms!
-    if text and not image_base64:
-        fast_result = _rule_based_interpret(text)
-        if fast_result.get("product") != "Produce":
-            return fast_result
-
     if not is_configured():
         return _rule_based_interpret(text or "")
 
@@ -363,7 +306,7 @@ async def interpret_signal(text: Optional[str] = None, image_base64: Optional[st
                 system_instruction=SIGNAL_SYSTEM,
                 response_mime_type="application/json",
                 response_schema=SignalSchema,
-                max_output_tokens=300,
+                max_output_tokens=600,
             ),
         )
         parsed = getattr(response, "parsed", None)
@@ -389,71 +332,70 @@ async def interpret_signal(text: Optional[str] = None, image_base64: Optional[st
         logger.warning("Gemini live interpretation failed (%s), using rule-based engine: %s", type(exc).__name__, exc)
         return _rule_based_interpret(text or "")
 
-LIST_SYSTEM = """You are BazaarMind's shopping-list parser for neighborhood markets.
+LIST_SYSTEM = """You are BazaarMind's shopping-list parser for Delhi NCR markets.
 Extract requested fruits and vegetables from Hindi, Hinglish, or English.
-Never invent quantities. If quantity is not explicitly stated, set quantity to null.
-If the text is a greeting, polite conversation, question, or does not mention produce items to buy, return an empty items list []. Never invent a product named 'Produce'.
+Never invent quantities. If quantity is not explicitly stated, set quantity to null. Ignore filler words.
 """
 
 def _rule_based_parse_list(text: str) -> Dict[str, Any]:
-    raw = (text or "").strip()
-    has_devanagari = bool(re.search(r'[\u0900-\u097F]', raw))
-    has_hinglish = any(w in raw.lower() for w in ["aaj", "chahiye", "aur", "thoda", "kilo", "tamatar", "aloo", "pyaz", "dhaniya"])
+    raw_lower = (text or "").lower()
+    has_devanagari = bool(re.search(r'[\u0900-\u097F]', text))
+    has_hinglish = any(w in raw_lower for w in ["aaj", "chahiye", "aur", "thoda", "kilo", "tamatar", "aloo", "pyaz", "dhaniya"])
     lang = "HINDI" if has_devanagari else ("HINGLISH" if has_hinglish else "ENGLISH")
 
-    if _is_greeting(raw):
-        return {
-            "ok": True,
-            "items": [],
-            "isGreeting": True,
-            "language": lang,
-            "confirmationText": None
-        }
-
-    dev_digits = str.maketrans("०१२३४५६७८९", "0123456789")
-    raw_lower = raw.translate(dev_digits).lower()
+    candidates = [
+        ("Tomatoes", ["tomato", "tomatoes", "tamatar", "टमाटर"]),
+        ("Onions", ["onion", "onions", "pyaz", "pyaaz", "प्याज", "प्याज़"]),
+        ("Potatoes", ["potato", "potatoes", "aloo", "alu", "आलू"]),
+        ("Coriander", ["coriander", "dhaniya", "dhania", "धनिया"]),
+        ("Lemon", ["lemon", "lemons", "nimbu", "neebu", "नींबू", "नीबू"]),
+        ("Banana", ["banana", "bananas", "kela", "केला"]),
+        ("Apple", ["apple", "apples", "seb", "saib", "सेब"]),
+        ("Chilli", ["chilli", "chillies", "chili", "chilies", "hari mirch", "mirch", "मिर्च", "हरी मिर्च"]),
+        ("Ginger", ["ginger", "adrak", "adrakh", "अदरक"]),
+        ("Carrots", ["carrot", "carrots", "gajar", "गाजर"]),
+        ("Spinach", ["spinach", "palak", "पालक"]),
+    ]
 
     items = []
-    seen = set()
-    for alias, canon in PRODUCT_ALIASES.items():
-        if alias in raw_lower and canon not in seen:
-            seen.add(canon)
-            qty = None
-            qty_match = re.search(r'(\d+(?:\.\d+)?\s*(?:kg|kilo|kilograms?|bunch|bundle|dozen|g|grams?|किलो|ग्राम|दर्जन|गड्डी))\s*' + re.escape(alias), raw_lower)
-            if not qty_match:
-                qty_match = re.search(re.escape(alias) + r'\s*(\d+(?:\.\d+)?\s*(?:kg|kilo|kilograms?|bunch|bundle|dozen|g|grams?|किलो|ग्राम|दर्जन|गड्डी))', raw_lower)
-            if qty_match:
-                qty = qty_match.group(1)
-            items.append({"product": canon, "quantity": qty})
+    for canon, aliases in candidates:
+        for a in aliases:
+            match = re.search(r'\b' + re.escape(a) + r'\b', raw_lower)
+            if match:
+                qty = None
+                prefix = raw_lower[:match.start()].strip().split()
+                if prefix:
+                    candidate_qty = " ".join(prefix[-2:]) if len(prefix) >= 2 else prefix[-1]
+                    qty_match = re.search(r'(\d+(?:\.\d+)?\s*(?:kg|kilo|kilograms?|bunch|bundle|dozen|g|grams?))', candidate_qty)
+                    if qty_match:
+                        qty = qty_match.group(1)
+                    elif re.match(r'^\d+$', prefix[-1]):
+                        qty = prefix[-1] + " kg"
+                items.append({"product": canon, "quantity": qty})
+                break
 
-    confirmation = format_shopper_confirmation(items, lang) if items else None
-    return {"ok": True, "items": items, "isGreeting": False, "language": lang, "confirmationText": confirmation}
+    if not items:
+        items.append({"product": "Produce", "quantity": None})
+
+    confirmation = format_shopper_confirmation(items, lang)
+    return {"items": items, "language": lang, "confirmationText": confirmation}
 
 async def parse_shopping_list(text: str, session_id: str = "list") -> Dict[str, Any]:
     del session_id
-    if _is_greeting(text):
-        has_dev = bool(re.search(r'[\u0900-\u097F]', text or ""))
-        return {"ok": True, "items": [], "isGreeting": True, "language": "HINDI" if has_dev else "HINGLISH", "confirmationText": None}
-
-    # Fast path: check recognized items immediately
-    fast_parse = _rule_based_parse_list(text)
-    if fast_parse.get("items"):
-        return fast_parse
-
     if not is_configured():
-        return fast_parse
+        return _rule_based_parse_list(text)
 
     try:
         client = _client()
         response = await asyncio.to_thread(
             client.models.generate_content,
             model=GEMINI_MODEL,
-            contents=f'Parse this shopping list. If no produce items to buy, return empty items []:\n"{text}"',
+            contents=f'Parse this shopping list:\n"{text}"',
             config=types.GenerateContentConfig(
                 system_instruction=LIST_SYSTEM,
                 response_mime_type="application/json",
                 response_schema=ShoppingListSchema,
-                max_output_tokens=300,
+                max_output_tokens=600,
             ),
         )
         parsed = getattr(response, "parsed", None)
@@ -465,12 +407,10 @@ async def parse_shopping_list(text: str, session_id: str = "list") -> Dict[str, 
         items = []
         for item in data.get("items", []):
             product = normalize_product(item.get("product"))
-            if product and product.lower() != "produce":
+            if product:
                 items.append({"product": product, "quantity": item.get("quantity")})
-        data["ok"] = True
         data["items"] = items
-        data["isGreeting"] = len(items) == 0
-        data["confirmationText"] = format_shopper_confirmation(items, data.get("language", "HINGLISH")) if items else None
+        data["confirmationText"] = format_shopper_confirmation(items, data.get("language", "HINGLISH"))
         return data
 
     except Exception as exc:
@@ -509,9 +449,9 @@ def _rule_based_ask(question: str, market_context: str) -> str:
     market_name = "INA Market" if "ina" in market_context.lower() else "your active market"
 
     # Anti-contamination check: asking about another market
-    active_is_ina = "ina market" in market_context.lower()
+    active_is_ina = "ina market" in market_context.lower() or "ina" in market_context.lower()
     if active_is_ina and any(m in q_lower for m in ["azadpur", "ghazipur", "okhla", "keshopur", "chandni chowk"]):
-        return "I don't have enough recent local signals for that market. I am currently grounded in your active INA Market evidence."
+        return "I don't have enough recent local signals for that market. I am currently grounded in the active INA Market evidence."
 
     # Friendly conversational greetings & intros
     greetings = ["hello", "hi", "namaste", "hey", "kem cho", "ram ram", "pranam", "kya haal", "kaise ho"]
@@ -576,6 +516,11 @@ async def ask_bazaar(question: str, market_context: str, session_id: str = "ask"
             "I can help explain what is happening in your selected market using its available evidence. "
             "Please ask about produce availability, observed price ranges, demand, or active vendor stalls."
         )
+
+    # Anti-contamination check: asking about another market while in INA Market
+    active_is_ina = "ina market" in market_context.lower() or "ina" in market_context.lower()
+    if active_is_ina and any(m in q_lower for m in ["azadpur", "ghazipur", "okhla", "keshopur", "chandni chowk"]):
+        return "I don't have enough recent local signals for that market. I am currently grounded in the active INA Market evidence."
 
     if not is_configured():
         return _rule_based_ask(question, market_context)

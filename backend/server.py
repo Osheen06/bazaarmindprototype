@@ -344,7 +344,7 @@ async def get_market_pulse_canonical(market_id: str, dataSource: Optional[str] =
     market = await db.markets.find_one({"id": market_id}, {"_id": 0})
     if not market and market_id == "demo-ina":
         market = dict(demo_seed.DEMO_MARKET)
-    ds = "DEMO" if market_id.startswith("demo-") else (dataSource or "REAL")
+    ds = dataSource or ("DEMO" if market_id.startswith("demo-") else "REAL")
     pulse = await intelligence.compute_market_pulse(db, market_id, data_source=ds)
     sig_count = pulse.get("totalSignals", 0)
     state = _determine_market_state(market or {"id": market_id}, sig_count)
@@ -362,7 +362,7 @@ async def get_market_pulse_canonical(market_id: str, dataSource: Optional[str] =
 
 @api.get("/markets/{market_id}/evidence")
 async def get_market_evidence(market_id: str, dataSource: Optional[str] = None):
-    ds = "DEMO" if market_id.startswith("demo-") else (dataSource or "REAL")
+    ds = dataSource or ("DEMO" if market_id.startswith("demo-") else "REAL")
     query: Dict[str, Any] = {"marketId": market_id, "status": "confirmed"}
     if ds in ("DEMO", "PILOT", "REAL"):
         query["dataSource"] = ds
@@ -605,11 +605,10 @@ async def get_products():
 # ----------------------------- Market Pulse -----------------------------
 @api.get("/market-pulse")
 async def market_pulse(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
-    ds = "DEMO" if marketId.startswith("demo-") else dataSource
     market = await db.markets.find_one({"id": marketId}, {"_id": 0})
-    pulse = await intelligence.compute_market_pulse(db, marketId, data_source=ds)
+    pulse = await intelligence.compute_market_pulse(db, marketId, data_source=dataSource)
     pulse["market"] = market or {"id": marketId, "name": "INA Market · South Delhi"}
-    pulse["dataSource"] = ds
+    pulse["dataSource"] = dataSource
     pulse["ok"] = True
     return pulse
 
@@ -699,19 +698,7 @@ async def shopping_list_parse(req: ShoppingListRequest):
         logger.exception("list parse failed")
         return JSONResponse(status_code=200, content={"ok": False, "error": "BazaarMind couldn't read that list right now. Please try again."})
 
-    if parsed.get("isGreeting") or not parsed.get("items"):
-        return {
-            "ok": True,
-            "items": [],
-            "isGreeting": True,
-            "tightCount": 0,
-            "summary": None,
-            "language": parsed.get("language", "ENGLISH"),
-            "confirmationText": None,
-            "persisted": False,
-        }
-
-    data_source = "DEMO" if req.marketId.startswith("demo-") else await _resolve_source_async(req.participantId, None)
+    data_source = await _resolve_source_async(req.participantId, None)
     pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=data_source)
     pulse_map = {p["product"]: p for p in pulse["products"]}
 
@@ -769,7 +756,7 @@ async def shopper_parse_alias(req: ShoppingListRequest):
 
 @api.post("/shopper/plan-route")
 async def plan_shopper_route_endpoint(req: PlanRouteRequest):
-    data_source = "DEMO" if req.marketId.startswith("demo-") else (req.dataSource or "DEMO")
+    data_source = req.dataSource or "DEMO"
     pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=data_source)
     market = await db.markets.find_one({"id": req.marketId}, {"_id": 0})
     market_name = market["name"] if market else "INA Market · South Delhi"
@@ -826,8 +813,7 @@ async def plan_shopper_route_endpoint(req: PlanRouteRequest):
 # ----------------------------- Ask BazaarMind -----------------------------
 @api.post("/ask-bazaar")
 async def ask_bazaar(req: AskRequest):
-    effective_ds = "DEMO" if req.marketId.startswith("demo-") else (req.dataSource or "DEMO")
-    pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=effective_ds)
+    pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=req.dataSource)
     market = await db.markets.find_one({"id": req.marketId}, {"_id": 0})
     market_name = market["name"] if market else "INA Market · South Delhi"
     if not pulse["products"]:
@@ -842,7 +828,7 @@ async def ask_bazaar(req: AskRequest):
         }
     context = intelligence.build_pulse_context(pulse, market_name)
     try:
-        answer = await gemini_service.ask_bazaar(req.question, context, session_id=str(uuid.uuid4()), data_source=effective_ds)
+        answer = await gemini_service.ask_bazaar(req.question, context, session_id=str(uuid.uuid4()), data_source=req.dataSource)
         return {
             "ok": True,
             "answer": answer,
@@ -894,8 +880,7 @@ async def voice_transcribe(audio: UploadFile = File(...)):
 # ----------------------------- Vendor demand -----------------------------
 @api.get("/vendor/demand")
 async def vendor_demand(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
-    ds = "DEMO" if marketId.startswith("demo-") else dataSource
-    cursor = db.market_signals.find({"marketId": marketId, "source": "SHOPPER", "status": "confirmed", "dataSource": ds}, {"_id": 0})
+    cursor = db.market_signals.find({"marketId": marketId, "source": "SHOPPER", "status": "confirmed", "dataSource": dataSource}, {"_id": 0})
     signals = await cursor.to_list(5000)
     counts: Dict[str, int] = {}
     for s in signals:
@@ -915,10 +900,9 @@ async def vendor_demand(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"
 # ----------------------------- Market network -----------------------------
 @api.get("/market-network")
 async def market_network(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
-    ds = "DEMO" if marketId.startswith("demo-") else dataSource
     market = await db.markets.find_one({"id": marketId}, {"_id": 0})
     vendors = await db.vendors.find({"marketId": marketId}, {"_id": 0}).to_list(100)
-    cursor = db.market_signals.find({"marketId": marketId, "status": "confirmed", "dataSource": ds}, {"_id": 0})
+    cursor = db.market_signals.find({"marketId": marketId, "status": "confirmed", "dataSource": dataSource}, {"_id": 0})
     signals = await cursor.to_list(5000)
 
     vendor_counts: Dict[str, int] = {}
@@ -987,6 +971,7 @@ async def snapshots_trends(marketId: str = DEFAULT_MARKET, dataSource: str = "DE
 async def mandi_intelligence_endpoint(product: Optional[str] = Query("Tomatoes")):
     """Module 8: Mandi Intelligence & Farmer Confidence ('Konsi Mandi Jaun?')"""
     return await intelligence.compute_mandi_intelligence(db, product)
+
 
 # ----------------------------- Seasonality & Wastage -----------------------------
 @api.get("/intelligence/seasonality")
@@ -1181,19 +1166,20 @@ async def vendor_loans_overview(marketId: str = DEFAULT_MARKET):
     return {
         "ok": True,
         "market": "INA Market · South Delhi",
-        "underwritingModel": "BazaarMind Daily Signal & Cashflow Credit Score (BharatPe Model)",
-        "totalCreditDisbursed": 485000,
-        "activeBorrowers": 18,
-        "repaymentRate": 99.4,
-        "partners": ["ICICI Merchant Finance", "BharatPe Capital NBFC", "PM SVANidhi Lending Pool"],
+        "status": "CONCEPT_HYPOTHESIS",
+        "moduleType": "FUTURE ARCHITECTURAL SPECIFICATION",
+        "underwritingModel": "Daily Signal Reputation & Morning Presence Hypothesis",
+        "simulatedCreditPool": 500000,
+        "indicativeInterestRate": "1.2% - 1.5% flat monthly (indicative)",
+        "disclaimer": "BazaarMind is an open market intelligence network, not a licensed NBFC or bank. No real loans are disbursed. This interface models how verified physical presence and signal consistency could inform future regulated lending partnerships.",
         "vendors": [
             {
                 "vendorId": "v1",
                 "vendorName": "Ramesh Kumar Sabzi Bhandar",
                 "stallName": "Stall 14 · Lane 2 (Fresh Greens)",
                 "creditScore": 845,
-                "scoreCategory": "Tier 1 Prime",
-                "preApprovedLimit": 25000,
+                "scoreCategory": "Tier 1 Prime (Simulated)",
+                "indicativeLimit": 25000,
                 "activeLoan": None,
                 "consecutiveDaysReporting": 48,
                 "morningLogConsistency": "98%",
@@ -1204,16 +1190,16 @@ async def vendor_loans_overview(marketId: str = DEFAULT_MARKET):
                 "vendorName": "Subhash Chand & Sons",
                 "stallName": "Stall 22 · Mandi Gate (Daily Essentials)",
                 "creditScore": 810,
-                "scoreCategory": "Tier 1 Prime",
-                "preApprovedLimit": 20000,
+                "scoreCategory": "Tier 1 Prime (Simulated)",
+                "indicativeLimit": 20000,
                 "activeLoan": {
-                    "loanId": "BM-LN-8921",
+                    "loanId": "BM-SIM-8921",
                     "amount": 15000,
-                    "disbursedAt": "2026-09-15",
+                    "simulatedDate": "2026-09-15",
                     "tenureDays": 30,
                     "dailyInstallment": 525,
                     "remainingBalance": 4725,
-                    "status": "ACTIVE_REPAYING",
+                    "status": "SIMULATED_REPAYMENT",
                 },
                 "consecutiveDaysReporting": 64,
                 "morningLogConsistency": "96%",
@@ -1224,8 +1210,8 @@ async def vendor_loans_overview(marketId: str = DEFAULT_MARKET):
                 "vendorName": "Pooja Exotics & Gourmet Herbs",
                 "stallName": "Stall 18 · Central Arcade (Imported & Exotics)",
                 "creditScore": 870,
-                "scoreCategory": "Elite Merchant",
-                "preApprovedLimit": 40000,
+                "scoreCategory": "Elite Merchant (Simulated)",
+                "indicativeLimit": 40000,
                 "activeLoan": None,
                 "consecutiveDaysReporting": 92,
                 "morningLogConsistency": "99%",
@@ -1236,8 +1222,8 @@ async def vendor_loans_overview(marketId: str = DEFAULT_MARKET):
                 "vendorName": "Chaudhary Aloo Pyaaz Corner",
                 "stallName": "Stall 05 · Wholesale Bay",
                 "creditScore": 790,
-                "scoreCategory": "Tier 2 Stable",
-                "preApprovedLimit": 15000,
+                "scoreCategory": "Tier 2 Stable (Simulated)",
+                "indicativeLimit": 15000,
                 "activeLoan": None,
                 "consecutiveDaysReporting": 35,
                 "morningLogConsistency": "92%",
@@ -1248,8 +1234,8 @@ async def vendor_loans_overview(marketId: str = DEFAULT_MARKET):
                 "vendorName": "Khan Fresh Fruits & Berries",
                 "stallName": "Stall 09 · South Arcade",
                 "creditScore": 825,
-                "scoreCategory": "Tier 1 Prime",
-                "preApprovedLimit": 30000,
+                "scoreCategory": "Tier 1 Prime (Simulated)",
+                "indicativeLimit": 30000,
                 "activeLoan": None,
                 "consecutiveDaysReporting": 51,
                 "morningLogConsistency": "95%",
@@ -1263,20 +1249,18 @@ async def vendor_loans_apply(req: LoanApplicationRequest):
     if req.amount < 1000 or req.amount > 50000:
         raise HTTPException(status_code=400, detail="Loan amount must be between ₹1,000 and ₹50,000.")
     daily_rate = round(req.amount / req.tenureDays + (req.amount * 0.015 / req.tenureDays), 2)
-    utr_no = f"UTR{int(time.time())}{uuid.uuid4().hex[:4].upper()}"
-    loan_id = f"BM-LN-{uuid.uuid4().hex[:6].upper()}"
+    sim_id = f"BM-SIM-{uuid.uuid4().hex[:6].upper()}"
     return {
         "ok": True,
-        "loanId": loan_id,
-        "status": "DISBURSED",
-        "utrNumber": utr_no,
-        "disbursedAmount": req.amount,
+        "simulationId": sim_id,
+        "status": "SIMULATED_ASSESSMENT",
+        "indicativeAmount": req.amount,
         "tenureDays": req.tenureDays,
-        "dailyDeduction": daily_rate,
+        "indicativeDailyRepayment": daily_rate,
         "upiId": req.upiId,
-        "repaymentMethod": "Auto-debit from daily UPI merchant QR settlements",
-        "approvalTimestamp": datetime.now(timezone.utc).isoformat(),
-        "disclaimer": "Underwritten via BazaarMind Signal Footprint & Daily Stall Activity. Partner NBFC License: RBI/ND-2021/8871.",
+        "repaymentMethod": "Concept: Auto-debit from daily UPI merchant QR settlements",
+        "evaluatedAt": datetime.now(timezone.utc).isoformat(),
+        "disclaimer": "SIMULATION ONLY: BazaarMind is not a bank or licensed lender. No real credit is issued, and no real funds are transferred.",
     }
 
 location_router = location_routes.build_router(db)

@@ -18,6 +18,7 @@ import {
   Leaf,
   Compass,
   FileText,
+  Banknote,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MoreLinkRow } from "../components/Layout";
@@ -74,6 +75,7 @@ export default function More() {
           <MoreLinkRow to="/seasonality" icon={Leaf} title="Seasonality & Wastage" desc="Modules 9-10: Day-of-week multipliers & perishable risk alerts" testid="more-seasonality" />
           <MoreLinkRow to="/heatmap" icon={Compass} title="Exotic Food Heatmap" desc="Module 14: South Delhi neighborhood micro-demand (N≥5)" testid="more-heatmap" />
           <MoreLinkRow to="/casestudies" icon={FileText} title="Pilot Case Studies" desc="Module 13: 14-day field protocol & honest pilot learnings" testid="more-casestudies" />
+          <MoreLinkRow to="/loans" icon={Banknote} title="Vendor Capital Layer" desc="Future Concept: Working capital underwriting from signal consistency" testid="more-loans" />
           <MoreLinkRow to="/network" icon={Network} title="Market Network" desc="Demand & supply as one living graph" testid="more-network" />
           <MoreLinkRow to="/whatsapp" icon={MessageCircle} title="WhatsApp Channel" desc="Integration-ready — production credentials required" testid="more-whatsapp" />
           <MoreLinkRow to="/join" icon={UserPlus} title="Join the Pilot" desc="Onboard as a shopper or vendor in under a minute" testid="more-join" />

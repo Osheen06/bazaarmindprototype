@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   NavLink,
   useLocation,
@@ -14,13 +14,12 @@ import {
   Store,
   Sparkles,
   Network,
-  Banknote,
-  Radio,
   ChevronRight,
-  TrendingUp,
+  Compass,
 } from "lucide-react";
 
 import LocationMarketPicker from "./LocationMarketPicker";
+import PitchModeModal from "./PitchModeModal";
 import { useApp } from "../context/AppContext";
 
 const MOBILE_NAV = [
@@ -43,16 +42,16 @@ const MOBILE_NAV = [
     testid: "nav-item-vendor",
   },
   {
-    to: "/mandi",
-    label: "Mandi",
-    icon: TrendingUp,
-    testid: "nav-item-mandi",
+    to: "/ask",
+    label: "Ask",
+    icon: Sparkles,
+    testid: "nav-item-ask",
   },
   {
-    to: "/loans",
-    label: "Loans",
-    icon: Banknote,
-    testid: "nav-item-loans",
+    to: "/more",
+    label: "More",
+    icon: Compass,
+    testid: "nav-item-more",
   },
 ];
 
@@ -76,38 +75,48 @@ const SIDEBAR_NAV = [
     testid: "side-vendor",
   },
   {
-    to: "/mandi",
-    label: "Mandi Arbitrage",
-    icon: TrendingUp,
-    testid: "side-mandi",
-  },
-  {
-    to: "/loans",
-    label: "Vendor Capital",
-    icon: Banknote,
-    testid: "side-loans",
-  },
-  {
     to: "/ask",
     label: "Ask BazaarMind",
     icon: Sparkles,
     testid: "side-ask",
   },
+  {
+    to: "/network",
+    label: "Market Network",
+    icon: Network,
+    testid: "side-network",
+  },
+  {
+    to: "/more",
+    label: "More & Future",
+    icon: Compass,
+    testid: "side-more",
+  },
 ];
 
 function LiveMarketBadge() {
+  const { currentMarket, dataSource } = useApp();
+  const isDemo = dataSource === "DEMO" || currentMarket?.id === "demo-ina" || currentMarket?.isDemo;
+
   return (
     <div
       className="flex items-center gap-2"
       data-testid="live-market-indicator"
     >
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-1 text-[11px] font-bold text-emerald-800 shadow-2xs">
-        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-        LIVE INA BAZAAR
-      </span>
+      {isDemo ? (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200/80 px-2.5 py-1 text-[11px] font-bold text-amber-800 shadow-2xs">
+          <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+          DEMO · Synthetic Signals
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 text-[11px] font-bold text-emerald-800 shadow-2xs">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          LIVE · {currentMarket?.name?.split("·")[0] || "Market"}
+        </span>
+      )}
 
-      <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#1E5631]/8 border border-[#1E5631]/20 px-2.5 py-1 text-[11px] font-semibold text-[#1E5631]">
-        48 ACTIVE SENSORS
+      <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#1E5631]/8 border border-[#1E5631]/20 px-2 py-1 text-[11px] font-semibold text-[#1E5631]">
+        {isDemo ? "INA Demo Environment" : "Field Pilot Mode"}
       </span>
     </div>
   );
@@ -138,6 +147,7 @@ function Logo({ compact = false }) {
 export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [showPitchModal, setShowPitchModal] = useState(false);
 
   const {
     currentMarket,
@@ -196,7 +206,7 @@ export default function Layout({ children }) {
 
               <div className="text-[11px] text-[#8A8A82]">
                 {currentMarket?.area ||
-                  "Aurobindo Marg · 48 Active Sensors"}
+                  "Aurobindo Marg · South Delhi"}
               </div>
             </div>
           </div>
@@ -231,13 +241,23 @@ export default function Layout({ children }) {
 
                 <div className="text-[11px] text-[#5C6360] truncate">
                   {currentMarket?.area ||
-                    "South Delhi · Live Sensor Network"}
+                    "South Delhi Market Network"}
                 </div>
               </div>
 
               {/* Right controls */}
 
               <div className="flex items-center gap-2 ml-auto">
+                <button
+                  onClick={() => setShowPitchModal(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1E5631] text-[#FDFBF7] hover:bg-[#153e23] px-3 py-1.5 text-xs font-bold shadow-sm transition-all hover:scale-105 active:scale-95"
+                  data-testid="pitch-mode-trigger-btn"
+                  title="Open Live Judging Pitch Controller"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                  <span className="hidden sm:inline">Pitch Mode</span>
+                  <span className="sm:hidden">Pitch</span>
+                </button>
                 <LocationMarketPicker />
                 <LiveMarketBadge />
               </div>
@@ -316,6 +336,8 @@ export default function Layout({ children }) {
           </NavLink>
         ))}
       </nav>
+
+      <PitchModeModal isOpen={showPitchModal} onClose={() => setShowPitchModal(false)} />
     </div>
   );
 }

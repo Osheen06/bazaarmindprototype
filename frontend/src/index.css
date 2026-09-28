@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -45,7 +45,7 @@
 
 body {
   margin: 0;
-  font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bm-bg);
   color: var(--bm-ink);
   -webkit-font-smoothing: antialiased;
@@ -53,14 +53,8 @@ body {
 }
 
 h1, h2, h3, h4, .font-display {
-  font-family: 'Outfit', 'Noto Sans Devanagari', sans-serif;
-  letter-spacing: -0.01em;
-}
-
-/* Devanagari script must preserve native letter-spacing so matras/ligatures do not collide */
-:lang(hi), .font-hindi, [lang="hi"], [lang="hin"] {
-  font-family: 'Noto Sans Devanagari', 'Plus Jakarta Sans', sans-serif !important;
-  letter-spacing: normal !important;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .font-mono { font-family: 'JetBrains Mono', monospace; }

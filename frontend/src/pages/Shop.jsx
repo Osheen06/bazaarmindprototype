@@ -86,7 +86,7 @@ export default function Shop() {
     try {
       // Step 1: Parse without persisting yet (Structured Demand Confirmation Step)
       const res = await parseShoppingList(value, marketId, participant?.id, false);
-      if (res.isGreeting || !res.ok || !res.items?.length) {
+      if (!res.ok || !res.items?.length) {
         // If not a list of produce, check if user is asking a question or greeting
         try {
           const askRes = await askBazaar(value, marketId, dataSource);
@@ -97,7 +97,7 @@ export default function Shop() {
                 id: `ans-${Date.now()}`,
                 role: "assistant",
                 type: "text",
-                text: askRes.answer || "Namaste! I am BazaarMind. Tell me what produce you want to buy (e.g., '2 kg tamatar aur pyaaz') or ask about prices!",
+                text: askRes.answer || "BazaarMind is tracking local market signals.",
               },
             ]);
             return;
@@ -110,9 +110,7 @@ export default function Shop() {
             id: `err-${Date.now()}`,
             role: "assistant",
             type: "text",
-            text: res.isGreeting
-              ? "Namaste! I am BazaarMind's shopping assistant. Tell me what produce you want to buy today (e.g., '2 kg tamatar aur 1 kg aloo') to check availability, prices, and optimize your market route!"
-              : (res.error || "BazaarMind couldn't identify specific produce in that message. Try saying: 'Mujhe 2 kilo tamatar chahiye' or ask 'Tamatar ka rate kya hai?'."),
+            text: res.error || "BazaarMind couldn't identify specific produce in that message. Try saying: 'Mujhe 2 kilo tamatar chahiye' or ask 'Tamatar ka rate kya hai?'.",
           },
         ]);
       } else {

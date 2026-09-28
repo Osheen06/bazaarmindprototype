@@ -173,6 +173,17 @@ export default function LocationMarketPicker() {
                 : "Use my location"}
             </button>
 
+            <button
+              onClick={() => {
+                const ina = (markets || []).find((m) => m.id === "demo-ina") || { id: "demo-ina", name: "INA Market · South Delhi" };
+                selectMarket(ina);
+              }}
+              className="mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 px-3 py-2 text-xs font-semibold hover:bg-amber-100 transition-colors"
+              data-testid="return-demo-ina-btn"
+            >
+              🎯 Return to INA Market (Demo Mode)
+            </button>
+
             {locationStatus === "error" && locationError && (
               <div className="mt-3 rounded-xl border border-[#F0D7C7] bg-[#FFF5EF] px-3 py-2 text-xs text-[#9B4D24]">
                 <div className="font-semibold">Location unavailable</div>
@@ -307,7 +318,7 @@ export default function LocationMarketPicker() {
 
                       <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#1E5631]">
                         <Radio className="h-3 w-3" />
-                        LIVE
+                        {dataSource === "DEMO" || selected?.id === "demo-ina" || selected?.isDemo ? "DEMO" : "LIVE"}
                       </span>
                     </div>
 

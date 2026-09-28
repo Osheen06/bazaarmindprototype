@@ -107,7 +107,7 @@ export default function Landing() {
         <div className="inline-flex items-center gap-8 animate-marquee">
           <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            INA BAZAAR LIVE TICKER:
+            INA MARKET DEMO TICKER · SYNTHETIC SIGNALS:
           </span>
           {LIVE_TICKER_ITEMS.concat(LIVE_TICKER_ITEMS).map((item, idx) => (
             <span key={idx} className="inline-flex items-center gap-2">
@@ -147,9 +147,9 @@ export default function Landing() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 text-xs font-bold text-emerald-800 shadow-2xs">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            LIVE BAZAAR SENSORS ACTIVE
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3.5 py-1.5 text-xs font-bold text-amber-800 shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            DEMO ENVIRONMENT · SYNTHETIC SIGNALS
           </span>
         </div>
       </header>
@@ -186,7 +186,7 @@ export default function Landing() {
               transition={{ duration: 0.5, delay: 0.12 }}
               className="mt-6 text-[#3A403D] text-base sm:text-lg leading-relaxed max-w-xl font-medium"
             >
-              Every shopper is a signal. Every vendor is a sensor. BazaarMind connects offline bazaar conversations through Google Gemini into real-time price truth, smart stall navigation, wholesale mandi arbitrage, and instant vendor working capital.
+              Every shopper is a signal. Every vendor is a sensor. BazaarMind connects offline bazaar observations through Google Gemini into verified price ranges, smart stall navigation, wholesale mandi intelligence, and a reputation model for vendor working capital.
             </motion.p>
 
             <motion.div
@@ -202,7 +202,7 @@ export default function Landing() {
                 }}
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#1E5631] px-7 py-3.5 text-[#FDFBF7] font-bold text-sm hover:bg-[#164024] transition-all shadow-md hover:shadow-lg"
               >
-                <span>⚡ Explore Live Market Pulse</span>
+                <span>⚡ Explore Market Pulse</span>
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </button>
 
@@ -225,7 +225,7 @@ export default function Landing() {
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-5 py-3.5 text-amber-900 font-bold text-sm hover:bg-amber-100 transition-all shadow-xs"
               >
                 <Banknote className="h-4 w-4 text-amber-700" />
-                Vendor Loans
+                Vendor Capital (Concept)
               </button>
             </motion.div>
 
@@ -240,7 +240,7 @@ export default function Landing() {
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-[#1E5631]" />
-                <span>Daily UPI credit lines</span>
+                <span>Signal reputation model</span>
               </div>
             </div>
           </div>
@@ -260,15 +260,15 @@ export default function Landing() {
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-[#1E2022]">
-                      Live Sensor Stream
+                      Voice Sensor Stream
                     </h3>
                     <span className="text-[10px] text-[#8A8A82]">
-                      INA Market · Stall 14 (Ramesh Kumar)
+                      INA Market · Stall 14 (Ramesh Kumar · Demo)
                     </span>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                  REAL-TIME AUDIO
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                  SYNTHETIC DEMO
                 </span>
               </div>
 
@@ -407,13 +407,13 @@ export default function Landing() {
               <Banknote className="h-6 w-6" />
             </div>
             <h3 className="font-bold text-lg text-[#1E2022]">
-              Vendor Working Capital
+              Vendor Capital Layer
             </h3>
             <p className="text-xs text-[#5C6360] mt-2 leading-relaxed">
-              Instant daily micro-loans (₹5k–₹50k) underwritten by morning presence and sales velocity. 0 collateral, UPI auto-settled.
+              Future Concept: Reputation-based working capital underwriting driven by morning presence and signal consistency.
             </p>
             <div className="mt-4 text-xs font-bold text-amber-800 flex items-center gap-1">
-              Check Eligibility <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+              Explore Concept <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
         </div>
@@ -484,13 +484,13 @@ export default function Landing() {
         <div className="rounded-3xl bg-[#1E5631] text-white p-8 md:p-12 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
           <div className="relative z-10 max-w-xl">
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-300">
-              Live Commercial Rollout
+              Prototype & Pilot Architecture
             </span>
             <h3 className="font-display text-2xl sm:text-3xl font-extrabold mt-2 leading-tight">
               Experience the INA Market Intelligence Layer Today
             </h3>
             <p className="text-xs sm:text-sm text-emerald-100 mt-2 leading-relaxed">
-              Explore real-time produce prices, speak as a vendor, check wholesale mandi spreads, or simulate vendor working capital disbursals.
+              Explore range-based produce prices, speak as a vendor, check wholesale mandi spreads, or explore the vendor capital reputation model.
             </p>
           </div>
 
@@ -505,7 +505,7 @@ export default function Landing() {
               onClick={() => navigate("/loans")}
               className="px-6 py-3.5 rounded-full bg-emerald-900 border border-emerald-700 text-white font-bold text-sm hover:bg-emerald-800 transition-all"
             >
-              Vendor Micro-Loans
+              Vendor Capital (Concept)
             </button>
           </div>
         </div>
@@ -527,7 +527,7 @@ export default function Landing() {
             <button onClick={() => navigate("/shop")} className="hover:text-[#1E5631]">Shopper</button>
             <button onClick={() => navigate("/vendor")} className="hover:text-[#1E5631]">Vendor</button>
             <button onClick={() => navigate("/mandi")} className="hover:text-[#1E5631]">Mandi Arbitrage</button>
-            <button onClick={() => navigate("/loans")} className="hover:text-[#1E5631]">Vendor Loans</button>
+            <button onClick={() => navigate("/loans")} className="hover:text-[#1E5631]">Vendor Capital</button>
             <button onClick={() => navigate("/ask")} className="hover:text-[#1E5631]">Ask AI</button>
           </div>
         </div>

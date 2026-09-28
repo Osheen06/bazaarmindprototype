@@ -61,7 +61,7 @@ export function DemandPill({ value }) {
 export function DemoNote({ className, children }) {
   return (
     <p className={cx("text-xs text-[#8A8A82] italic", className)}>
-      {children || "Verified INA Market observation · Real stall records."}
+      {children || "DEMO · Synthetic illustrative signals · Not real participating vendor records."}
     </p>
   );
 }

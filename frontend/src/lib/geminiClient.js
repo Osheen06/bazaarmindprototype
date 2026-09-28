@@ -19,18 +19,6 @@ const CANONICAL_MAP = [
   { name: "Ginger", aliases: ["adrak", "adrakh", "ginger", "अदरक"], hindi: "अदरक" },
   { name: "Carrots", aliases: ["gajar", "carrot", "carrots", "गाजर"], hindi: "गाजर" },
   { name: "Spinach", aliases: ["palak", "spinach", "पालक"], hindi: "पालक" },
-  { name: "Mangoes", aliases: ["mango", "mangoes", "aam", "aamras", "आम"], hindi: "आम" },
-  { name: "Garlic", aliases: ["garlic", "lahsun", "lasun", "lehsun", "लहसुन"], hindi: "लहसुन" },
-  { name: "Cucumber", aliases: ["cucumber", "kheera", "khira", "खीरा"], hindi: "खीरा" },
-  { name: "Cauliflower", aliases: ["cauliflower", "gobi", "gobhi", "phool gobi", "फूलगोभी", "गोभी"], hindi: "फूलगोभी" },
-  { name: "Cabbage", aliases: ["cabbage", "patta gobi", "patta gobhi", "पत्तागोभी"], hindi: "पत्तागोभी" },
-  { name: "Green Peas", aliases: ["peas", "matar", "muttar", "मटर"], hindi: "मटर" },
-  { name: "Okra", aliases: ["okra", "bhindi", "bhendi", "भिंडी"], hindi: "भिंडी" },
-  { name: "Papaya", aliases: ["papaya", "papita", "पपीता"], hindi: "पपीता" },
-  { name: "Oranges", aliases: ["orange", "oranges", "santra", "santre", "संतरा", "संतरे"], hindi: "संतरा" },
-  { name: "Pomegranate", aliases: ["pomegranate", "anaar", "anar", "अनार"], hindi: "अनार" },
-  { name: "Watermelon", aliases: ["watermelon", "tarbooz", "tarbuz", "तरबूज"], hindi: "तरबूज" },
-  { name: "Grapes", aliases: ["grapes", "angoor", "अंगूर"], hindi: "अंगूर" },
 ];
 
 function formatVendorConfirmation(product, availability, price, priceUnit, lang) {
@@ -61,47 +49,36 @@ function formatVendorConfirmation(product, availability, price, priceUnit, lang)
 }
 
 export function directInterpretSignal(text) {
-  const devToEng = (s) => (s || "").replace(/[०-९]/g, (d) => "०१२३४५६७८९".indexOf(d));
-  const raw = devToEng(text).toLowerCase().trim();
+  const raw = (text || "").toLowerCase().trim();
   let detected = "Produce";
   let itemMatch = null;
 
   for (const c of CANONICAL_MAP) {
-    if (c.aliases.some((a) => raw.includes(a.toLowerCase()))) {
+    if (c.aliases.some((a) => raw.includes(a))) {
       detected = c.name;
       itemMatch = c;
       break;
     }
   }
 
-  // Price extraction with Devanagari keywords
+  // Price extraction
   let price = null;
   const priceMatches = raw.match(/\b(\d{1,4})\b/g);
   if (priceMatches) {
-    const priceTriggers = ["rate", "रेट", "rupaye", "रुपये", "रुपए", "रु", "rs", "bhav", "भाव", "किलो", "प्रति", "/", "₹", "hai", "है", "चल रहा"];
     for (const m of priceMatches) {
       const val = parseFloat(m);
-      if (val >= 5 && val <= 500 && priceTriggers.some((t) => raw.includes(t))) {
+      if (val >= 5 && val <= 500 && (raw.includes("rate") || raw.includes("rupaye") || raw.includes("rs") || raw.includes("bhav") || raw.includes("/") || raw.includes("₹") || raw.includes("hai"))) {
         price = val;
         break;
       }
     }
   }
 
-  // Availability with Devanagari Hindi keywords
+  // Availability
   let availability = "NORMAL";
-  const lowKeywords = [
-    "कम आया", "थोड़ा कम", "कम है", "कम स्टॉक", "स्टॉक कम", "खत्म", "शॉर्टेज", "नहीं आया", "बची है",
-    "kam aaya", "thoda kam", "kam hai", "tight", "shortage", "nahi aaya", "stock kam", "khatam"
-  ];
-  const highKeywords = [
-    "बहुत है", "भरपूर", "अच्छा स्टॉक", "फुल स्टॉक", "नया स्टॉक", "खूब आया",
-    "bahut hai", "achha stock", "bharpuri", "full stock", "good supply", "plenty", "abundant"
-  ];
-
-  if (lowKeywords.some((k) => raw.includes(k))) {
+  if (["kam aaya", "kam hai", "tight", "shortage", "nahi aaya", "stock kam", "khatam"].some((k) => raw.includes(k))) {
     availability = "LOW";
-  } else if (highKeywords.some((k) => raw.includes(k))) {
+  } else if (["bahut hai", "achha stock", "bharpuri", "full stock", "good supply", "plenty", "abundant"].some((k) => raw.includes(k))) {
     availability = "HIGH";
   }
 
@@ -116,7 +93,7 @@ export function directInterpretSignal(text) {
   const signal = {
     product: detected,
     availability,
-    demand: raw.includes("chahiye") || raw.includes("bik raha") || raw.includes("मांग") ? "HIGH" : "NORMAL",
+    demand: raw.includes("chahiye") || raw.includes("bik raha") ? "HIGH" : "NORMAL",
     reportedPrice: price,
     priceUnit,
     signalType: price != null ? "PRICE" : (availability !== "NORMAL" ? "AVAILABILITY" : "SUPPLY"),
@@ -130,22 +107,13 @@ export function directInterpretSignal(text) {
 }
 
 export function directParseShoppingList(text, marketPulse = DEFAULT_DEMO_PULSE) {
-  const raw = (text || "").toLowerCase().trim();
-
-  // Greetings detection: never invent Produce for greetings
-  const greetings = ["hello", "hi", "hii", "hey", "namaste", "pranam", "kya haal", "kem cho"];
-  if (greetings.some((g) => raw === g || raw.startsWith(g + " "))) {
-    return { ok: true, items: [], isGreeting: true, tightCount: 0, summary: null, persisted: false };
-  }
-
+  const raw = (text || "").toLowerCase();
   const items = [];
-  const seen = new Set();
 
   for (const c of CANONICAL_MAP) {
-    if (c.aliases.some((a) => raw.includes(a.toLowerCase())) && !seen.has(c.name)) {
-      seen.add(c.name);
+    if (c.aliases.some((a) => raw.includes(a))) {
       let qty = null;
-      const qtyMatch = raw.match(new RegExp(`(\\d+(?:\\.\\d+)?\\s*(?:kg|kilo|kilograms?|bunch|bundle|dozen|g|grams?|किलो|दर्जन))\\s*${c.name.toLowerCase()}`));
+      const qtyMatch = raw.match(new RegExp(`(\\d+(?:\\.\\d+)?\\s*(?:kg|kilo|kilograms?|bunch|bundle|dozen|g|grams?))\\s*${c.name.toLowerCase()}`));
       if (qtyMatch) {
         qty = qtyMatch[1];
       }
@@ -164,7 +132,15 @@ export function directParseShoppingList(text, marketPulse = DEFAULT_DEMO_PULSE) 
   }
 
   if (!items.length) {
-    return { ok: true, items: [], isGreeting: false, tightCount: 0, summary: null, persisted: false };
+    items.push({
+      product: "Produce",
+      quantity: null,
+      known: false,
+      status: "unknown",
+      availability: "Unknown",
+      demand: "Unknown",
+      reportedPriceSignal: null,
+    });
   }
 
   const tightCount = items.filter((i) => i.status === "tight").length;
