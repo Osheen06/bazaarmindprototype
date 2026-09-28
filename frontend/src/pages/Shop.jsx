@@ -435,21 +435,21 @@ function ListResult({ data, marketId = "demo-ina", dataSource = "DEMO" }) {
                     <span className="text-[#8A8A82] font-normal italic"> · unspecified</span>
                   )}
                 </div>
-                {it.known ? (
+                {it.known && it.availability !== "Demand Registered" ? (
                   <div className="text-xs text-[#5C6360]">
                     {it.availability} availability · {it.demand} demand
                     {it.reportedPriceSignal ? ` · Observed: ${it.reportedPriceSignal}` : ""}
                   </div>
                 ) : (
-                  <div className="text-xs text-[#8A8A82]">Not enough signals for this item in this market yet.</div>
+                  <div className="text-xs text-[#1E5631] font-medium">
+                    ✓ Demand broadcast to local stalls · Active demand recorded
+                  </div>
                 )}
               </div>
             </div>
-            {it.known && (
-              <Chip tone={it.status === "tight" ? "orange" : "green"}>
-                {it.status === "tight" ? "Tight" : "Available"}
-              </Chip>
-            )}
+            <Chip tone={it.status === "tight" ? "orange" : "green"}>
+              {it.status === "tight" ? "Tight" : "Demand Logged"}
+            </Chip>
           </div>
         ))}
       </div>

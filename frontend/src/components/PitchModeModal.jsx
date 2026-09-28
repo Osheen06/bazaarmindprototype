@@ -49,6 +49,7 @@ export default function PitchModeModal({ isOpen, onClose }) {
 
   // Step 5: Anti-Contamination state
   const [guardLoading, setGuardLoading] = useState(false);
+  const [guardAnswer, setGuardAnswer] = useState("");
   // Audio speech synthesis state
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 

@@ -26,7 +26,42 @@ CANONICAL_PRODUCTS = [
     "Tomatoes", "Potatoes", "Onions", "Coriander",
     "Lemon", "Banana", "Apple", "Chilli", "Ginger",
     "Carrots", "Spinach", "Avocados", "Mushrooms", "Bell Peppers", "Bok Choy",
+    "Mango", "Garlic", "Cauliflower", "Cabbage", "Okra", "Peas", "Cucumber",
+    "Brinjal", "Bottle Gourd", "Bitter Gourd", "Pomegranate", "Watermelon", "Papaya", "Orange", "Grapes",
 ]
+
+HINDI_NAME_MAP = {
+    "Tomatoes": "टमाटर",
+    "Potatoes": "आलू",
+    "Onions": "प्याज",
+    "Coriander": "धनिया",
+    "Lemon": "नींबू",
+    "Banana": "केला",
+    "Apple": "सेब",
+    "Chilli": "हरी मिर्च",
+    "Ginger": "अदरक",
+    "Carrots": "गाजर",
+    "Spinach": "पालक",
+    "Avocados": "एवोकाडो",
+    "Mushrooms": "मशरूम",
+    "Bell Peppers": "शिमला मिर्च",
+    "Bok Choy": "पाक चोई",
+    "Mango": "आम",
+    "Garlic": "लहसुन",
+    "Cauliflower": "फूल गोभी",
+    "Cabbage": "पत्ता गोभी",
+    "Okra": "भिंडी",
+    "Peas": "मटर",
+    "Cucumber": "खीरा",
+    "Brinjal": "बैंगन",
+    "Bottle Gourd": "लौकी",
+    "Bitter Gourd": "करेला",
+    "Pomegranate": "अनार",
+    "Watermelon": "तरबूज",
+    "Papaya": "पपीता",
+    "Orange": "संतरा",
+    "Grapes": "अंगूर",
+}
 
 PRODUCT_ALIASES = {
     "tamatar": "Tomatoes", "tomato": "Tomatoes", "tomatoes": "Tomatoes", "टमाटर": "Tomatoes",
@@ -44,6 +79,21 @@ PRODUCT_ALIASES = {
     "mushroom": "Mushrooms", "mushrooms": "Mushrooms", "khumbi": "Mushrooms", "मशरूम": "Mushrooms",
     "shimla mirch": "Bell Peppers", "shimlamirch": "Bell Peppers", "capsicum": "Bell Peppers", "bell pepper": "Bell Peppers", "bell peppers": "Bell Peppers", "शिमला मिर्च": "Bell Peppers",
     "bok choy": "Bok Choy", "pak choi": "Bok Choy", "bokchoy": "Bok Choy",
+    "mango": "Mango", "mangoes": "Mango", "aam": "Mango", "aamras": "Mango", "langra": "Mango", "alphonso": "Mango", "safeda": "Mango", "chaunsa": "Mango", "dussehri": "Mango", "totapuri": "Mango", "आम": "Mango",
+    "garlic": "Garlic", "lehsun": "Garlic", "lahsun": "Garlic", "lahsan": "Garlic", "लहसुन": "Garlic",
+    "cauliflower": "Cauliflower", "gobhi": "Cauliflower", "gobi": "Cauliflower", "phool gobhi": "Cauliflower", "phool gobi": "Cauliflower", "फूल गोभी": "Cauliflower",
+    "cabbage": "Cabbage", "patta gobhi": "Cabbage", "bandh gobhi": "Cabbage", "band gobhi": "Cabbage", "patta gobi": "Cabbage", "पत्ता गोभी": "Cabbage",
+    "okra": "Okra", "ladyfinger": "Okra", "lady finger": "Okra", "bhindi": "Okra", "भिंडी": "Okra",
+    "peas": "Peas", "matar": "Peas", "green peas": "Peas", "मटर": "Peas",
+    "cucumber": "Cucumber", "kheera": "Cucumber", "khira": "Cucumber", "kakdi": "Cucumber", "खीरा": "Cucumber",
+    "brinjal": "Brinjal", "eggplant": "Brinjal", "baingan": "Brinjal", "baigan": "Brinjal", "बैंगन": "Brinjal",
+    "bottle gourd": "Bottle Gourd", "lauki": "Bottle Gourd", "ghiya": "Bottle Gourd", "doodhi": "Bottle Gourd", "लौकी": "Bottle Gourd",
+    "bitter gourd": "Bitter Gourd", "karela": "Bitter Gourd", "करेला": "Bitter Gourd",
+    "pomegranate": "Pomegranate", "anar": "Pomegranate", "anaar": "Pomegranate", "अनार": "Pomegranate",
+    "watermelon": "Watermelon", "tarbooz": "Watermelon", "tarbuz": "Watermelon", "तरबूज": "Watermelon",
+    "papaya": "Papaya", "papita": "Papaya", "पपीता": "Papaya",
+    "orange": "Orange", "santra": "Orange", "kinnow": "Orange", "santre": "Orange", "मौसंबी": "Orange", "संतरा": "Orange",
+    "grapes": "Grapes", "angoor": "Grapes", "angur": "Grapes", "अंगूर": "Grapes",
 }
 
 AVAILABILITY_HINDI = {
@@ -122,24 +172,7 @@ def _extract_json(text: str) -> Any:
 def _format_vendor_confirmation(product: str, availability: str, price: Optional[float], price_unit: Optional[str], lang: str) -> str:
     # Localized natural confirmation
     if lang in ("HINDI", "HINGLISH"):
-        prod_hi = next((p["hindi"] for p in [
-            {"name": "Tomatoes", "hindi": "टमाटर"},
-            {"name": "Onions", "hindi": "प्याज़"},
-            {"name": "Potatoes", "hindi": "आलू"},
-            {"name": "Coriander", "hindi": "धनिया"},
-            {"name": "Lemon", "hindi": "नींबू"},
-            {"name": "Banana", "hindi": "केला"},
-            {"name": "Apple", "hindi": "सेब"},
-            {"name": "Chilli", "hindi": "हरी मिर्च"},
-            {"name": "Ginger", "hindi": "अदरक"},
-            {"name": "Carrots", "hindi": "गाजर"},
-            {"name": "Spinach", "hindi": "पालक"},
-            {"name": "Avocados", "hindi": "एवोकाडो"},
-            {"name": "Mushrooms", "hindi": "मशरूम"},
-            {"name": "Bell Peppers", "hindi": "शिमला मिर्च"},
-            {"name": "Bok Choy", "hindi": "पाक चोई"},
-        ] if p["name"] == product), product)
-
+        prod_hi = HINDI_NAME_MAP.get(product, product)
         avail_text = AVAILABILITY_HINDI.get(availability, "सामान्य उपलब्धता")
         lines = [f"मैंने समझा:\n\n{prod_hi}\n{avail_text}"]
         if price is not None:
@@ -160,26 +193,10 @@ def format_shopper_confirmation(items: List[Dict[str, Any]], lang: str = "HINGLI
         lines = ["मैंने समझा:"]
         for it in items:
             p = it.get("product")
-            prod_hi = next((x["hindi"] for x in [
-                {"name": "Tomatoes", "hindi": "टमाटर"},
-                {"name": "Onions", "hindi": "प्याज़"},
-                {"name": "Potatoes", "hindi": "आलू"},
-                {"name": "Coriander", "hindi": "धनिया"},
-                {"name": "Lemon", "hindi": "नींबू"},
-                {"name": "Banana", "hindi": "केला"},
-                {"name": "Apple", "hindi": "सेब"},
-                {"name": "Chilli", "hindi": "हरी मिर्च"},
-                {"name": "Ginger", "hindi": "अदरक"},
-                {"name": "Carrots", "hindi": "गाजर"},
-                {"name": "Spinach", "hindi": "पालक"},
-                {"name": "Avocados", "hindi": "एवोकाडो"},
-                {"name": "Mushrooms", "hindi": "मशरूम"},
-                {"name": "Bell Peppers", "hindi": "शिमला मिर्च"},
-                {"name": "Bok Choy", "hindi": "पाक चोई"},
-            ] if x["name"] == p), p)
+            prod_hi = HINDI_NAME_MAP.get(p, p)
             q = it.get("quantity") or ""
             q_clean = q.replace("kilos", "किलो").replace("kilo", "किलो").replace("kg", "किलो")
-            lines.append(f"{q_clean} {prod_hi}".strip() if q_clean else prod_hi)
+            lines.append(f"{q_clean} {prod_hi}".strip() if q_clean else str(prod_hi))
         return "\n".join(lines)
     else:
         lines = ["Understood:"]
@@ -227,11 +244,15 @@ Core ground rules:
 
 def _rule_based_interpret(text: str) -> Dict[str, Any]:
     raw_lower = (text or "").lower().strip()
-    detected_product = "Produce"
-    for alias, canon in PRODUCT_ALIASES.items():
+    detected_product = None
+    for alias, canon in sorted(PRODUCT_ALIASES.items(), key=lambda x: -len(x[0])):
         if re.search(r'\b' + re.escape(alias) + r'\b', raw_lower):
             detected_product = canon
             break
+
+    if not detected_product:
+        clean_words = [w.strip(" ,.?!'\"") for w in raw_lower.split() if w.strip(" ,.?!'\"") not in ("aaj", "aaya", "aayi", "hai", "rate", "rupaye", "rupiya", "rs", "bhav", "per", "kg", "kilo", "thoda", "kam", "bahut", "stock", "chahiye", "bik", "raha", "bhi", "me")]
+        detected_product = clean_words[0].title() if clean_words else "Produce"
 
     # Price extraction
     price = None
@@ -365,39 +386,31 @@ def _rule_based_parse_list(text: str) -> Dict[str, Any]:
     has_hinglish = any(w in raw_lower for w in ["aaj", "chahiye", "aur", "thoda", "kilo", "tamatar", "aloo", "pyaz", "dhaniya"])
     lang = "HINDI" if has_devanagari else ("HINGLISH" if has_hinglish else "ENGLISH")
 
-    candidates = [
-        ("Tomatoes", ["tomato", "tomatoes", "tamatar", "टमाटर"]),
-        ("Onions", ["onion", "onions", "pyaz", "pyaaz", "प्याज", "प्याज़"]),
-        ("Potatoes", ["potato", "potatoes", "aloo", "alu", "आलू"]),
-        ("Coriander", ["coriander", "dhaniya", "dhania", "धनिया"]),
-        ("Lemon", ["lemon", "lemons", "nimbu", "neebu", "नींबू", "नीबू"]),
-        ("Banana", ["banana", "bananas", "kela", "केला"]),
-        ("Apple", ["apple", "apples", "seb", "saib", "सेब"]),
-        ("Chilli", ["chilli", "chillies", "chili", "chilies", "hari mirch", "mirch", "मिर्च", "हरी मिर्च"]),
-        ("Ginger", ["ginger", "adrak", "adrakh", "अदरक"]),
-        ("Carrots", ["carrot", "carrots", "gajar", "गाजर"]),
-        ("Spinach", ["spinach", "palak", "पालक"]),
-    ]
-
     items = []
-    for canon, aliases in candidates:
-        for a in aliases:
-            match = re.search(r'\b' + re.escape(a) + r'\b', raw_lower)
-            if match:
-                qty = None
-                prefix = raw_lower[:match.start()].strip().split()
-                if prefix:
-                    candidate_qty = " ".join(prefix[-2:]) if len(prefix) >= 2 else prefix[-1]
-                    qty_match = re.search(r'(\d+(?:\.\d+)?\s*(?:kg|kilo|kilograms?|bunch|bundle|dozen|g|grams?))', candidate_qty)
-                    if qty_match:
-                        qty = qty_match.group(1)
-                    elif re.match(r'^\d+$', prefix[-1]):
-                        qty = prefix[-1] + " kg"
-                items.append({"product": canon, "quantity": qty})
-                break
+    seen = set()
+    for alias, canon in sorted(PRODUCT_ALIASES.items(), key=lambda x: -len(x[0])):
+        if canon in seen:
+            continue
+        match = re.search(r'\b' + re.escape(alias) + r'\b', raw_lower)
+        if match:
+            seen.add(canon)
+            qty = None
+            prefix = raw_lower[:match.start()].strip().split()
+            if prefix:
+                candidate_qty = " ".join(prefix[-2:]) if len(prefix) >= 2 else prefix[-1]
+                qty_match = re.search(r'(\d+(?:\.\d+)?\s*(?:kg|kilo|kilograms?|bunch|bundle|dozen|g|grams?))', candidate_qty)
+                if qty_match:
+                    qty = qty_match.group(1)
+                elif re.match(r'^\d+$', prefix[-1]):
+                    qty = prefix[-1] + " kg"
+            items.append({"product": canon, "quantity": qty})
 
     if not items:
-        items.append({"product": "Produce", "quantity": None})
+        clean_words = [w.strip(" ,.?!'\"") for w in raw_lower.split() if w.strip(" ,.?!'\"") not in ("aaj", "chahiye", "aur", "thoda", "please", "me", "mujhe", "bhi", "give", "need", "want", "fresh", "kilo", "kg", "grams", "hai", "de", "do")]
+        if clean_words:
+            items.append({"product": clean_words[0].title(), "quantity": None})
+        else:
+            items.append({"product": "Produce", "quantity": None})
 
     confirmation = format_shopper_confirmation(items, lang)
     return {"items": items, "language": lang, "confirmationText": confirmation}

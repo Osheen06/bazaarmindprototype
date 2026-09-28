@@ -139,3 +139,44 @@ def test_ask_bazaar_demo_market_fallback(client):
     assert data.get("totalSignals", 0) > 0
     assert "onions" in data.get("answer", "").lower() or "pyaz" in data.get("answer", "").lower()
 
+def test_mango_shopper_parse_and_demand_persistence(client):
+    """Ensure mango is parsed as Mango (not Produce) and demand docs are persisted in DB."""
+    payload = {
+        "text": "mango",
+        "marketId": "demo-ina",
+        "persist": True,
+        "dataSource": "DEMO"
+    }
+    res = client.post("/api/shopping-list/parse", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["ok"] is True
+    assert len(data["items"]) == 1
+    assert data["items"][0]["product"] == "Mango"
+    assert data["persisted"] is True
+
+def test_mango_vendor_signal_interpretation(client):
+    """Ensure vendor input 'mango aaya hai 400 rupee kilo' extracts Mango with ₹400/kg price."""
+    payload = {
+        "text": "mango aaya hai 400 rupee kilo"
+    }
+    res = client.post("/api/signals/interpret", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["ok"] is True
+    sig = data.get("signal") or data.get("data")
+    assert sig["product"] == "Mango"
+    assert sig["reportedPrice"] == 400.0
+    assert sig["priceUnit"] == "kg"
+    assert "आम" in sig["confirmationText"]
+
+def test_vendor_demand_aggregation_with_fallback(client):
+    """Ensure vendor demand returns demand rankings and is never empty."""
+    res = client.get("/api/vendor/demand?marketId=demo-ina&dataSource=DEMO")
+    assert res.status_code == 200
+    data = res.json()
+    assert "products" in data
+    assert len(data["products"]) > 0
+    assert data["totalRequests"] > 0
+
+
