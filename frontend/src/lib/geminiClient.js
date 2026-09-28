@@ -15,29 +15,29 @@ const CANONICAL_MAP = [
   { name: "Lemon", aliases: ["nimbu", "neebu", "lemon", "lemons", "lime", "नींबू", "नीबू"], hindi: "नींबू" },
   { name: "Banana", aliases: ["kela", "banana", "bananas", "केला"], hindi: "केला" },
   { name: "Apple", aliases: ["seb", "saib", "apple", "apples", "सेब"], hindi: "सेब" },
-  { name: "Chilli", aliases: ["hari mirch", "mirch", "chili", "chilli", "chillies", "हरी मिर्च"], hindi: "हरी मिर्च" },
+  { name: "Chilli", aliases: ["hari mirch", "hariमिर्च", "mirch", "chili", "chilli", "chillies", "chilies", "हरी मिर्च", "मिर्च"], hindi: "हरी मिर्च" },
   { name: "Ginger", aliases: ["adrak", "adrakh", "ginger", "अदरक"], hindi: "अदरक" },
   { name: "Carrots", aliases: ["gajar", "carrot", "carrots", "गाजर"], hindi: "गाजर" },
   { name: "Spinach", aliases: ["palak", "spinach", "पालक"], hindi: "पालक" },
-  { name: "Mango", aliases: ["mango", "mangoes", "aam", "aamras", "langra", "alphonso", "safeda", "chaunsa", "dussehri", "आम"], hindi: "आम" },
-  { name: "Garlic", aliases: ["garlic", "lehsun", "lahsun", "lahsan", "लहसुन"], hindi: "लहसुन" },
-  { name: "Cauliflower", aliases: ["cauliflower", "gobhi", "gobi", "phool gobhi", "phool gobi", "फूल गोभी"], hindi: "फूल गोभी" },
-  { name: "Cabbage", aliases: ["cabbage", "patta gobhi", "bandh gobhi", "band gobhi", "पत्ता गोभी"], hindi: "पत्ता गोभी" },
-  { name: "Okra", aliases: ["okra", "ladyfinger", "lady finger", "bhindi", "भिंडी"], hindi: "भिंडी" },
-  { name: "Peas", aliases: ["peas", "matar", "green peas", "मटर"], hindi: "मटर" },
-  { name: "Cucumber", aliases: ["cucumber", "kheera", "khira", "kakdi", "खीरा"], hindi: "खीरा" },
-  { name: "Brinjal", aliases: ["brinjal", "eggplant", "baingan", "बैंगन"], hindi: "बैंगन" },
-  { name: "Bottle Gourd", aliases: ["bottle gourd", "lauki", "ghiya", "doodhi", "लौकी"], hindi: "लौकी" },
-  { name: "Bitter Gourd", aliases: ["bitter gourd", "karela", "करेला"], hindi: "करेला" },
-  { name: "Bell Peppers", aliases: ["bell pepper", "bell peppers", "shimla mirch", "capsicum", "शिमला मिर्च"], hindi: "शिमला मिर्च" },
-  { name: "Mushrooms", aliases: ["mushrooms", "mushroom", "khumbi", "मशरूम"], hindi: "मशरूम" },
   { name: "Avocados", aliases: ["avocado", "avocados", "makhanphal", "एवोकाडो"], hindi: "एवोकाडो" },
-  { name: "Bok Choy", aliases: ["bok choy", "pak choi", "bokchoy", "पाक चोई"], hindi: "पाक चोई" },
-  { name: "Pomegranate", aliases: ["pomegranate", "anar", "anaar", "अनार"], hindi: "अनार" },
+  { name: "Mushrooms", aliases: ["mushroom", "mushrooms", "khumbi", "मशरूम"], hindi: "मशरूम" },
+  { name: "Bell Peppers", aliases: ["shimla mirch", "capsicum", "bell pepper", "bell peppers", "शिमला मिर्च"], hindi: "शिमला मिर्च" },
+  { name: "Bok Choy", aliases: ["bok choy", "pak choi", "bokchoy"], hindi: "पाक चोई" },
+  { name: "Mango", aliases: ["mango", "mangoes", "aam", "aamras", "langra", "alphonso", "hapus", "आम"], hindi: "आम" },
+  { name: "Garlic", aliases: ["garlic", "lahsun", "lehsun", "lasun", "लहसुन"], hindi: "लहसुन" },
+  { name: "Cauliflower", aliases: ["cauliflower", "gobhi", "gobi", "phool gobhi", "फूल गोभी", "गोभी"], hindi: "फूल गोभी" },
+  { name: "Cabbage", aliases: ["cabbage", "band gobhi", "bandh gobhi", "पत्ता गोभी"], hindi: "पत्ता गोभी" },
+  { name: "Okra", aliases: ["okra", "bhindi", "lady finger", "ladyfinger", "भिंडी"], hindi: "भिंडी" },
+  { name: "Peas", aliases: ["peas", "matar", "mutter", "green peas", "मटर"], hindi: "मटर" },
+  { name: "Cucumber", aliases: ["cucumber", "kheera", "khira", "kakdi", "खीरा"], hindi: "खीरा" },
+  { name: "Brinjal", aliases: ["brinjal", "baingan", "eggplant", "aubergine", "baigan", "बैंगन"], hindi: "बैंगन" },
+  { name: "Bottle Gourd", aliases: ["bottle gourd", "lauki", "ghia", "doodhi", "लौकी"], hindi: "लौकी" },
+  { name: "Bitter Gourd", aliases: ["bitter gourd", "karela", "karella", "करेला"], hindi: "करेला" },
+  { name: "Pomegranate", aliases: ["pomegranate", "anar", "अनार"], hindi: "अनार" },
   { name: "Watermelon", aliases: ["watermelon", "tarbooz", "tarbuz", "तरबूज"], hindi: "तरबूज" },
   { name: "Papaya", aliases: ["papaya", "papita", "पपीता"], hindi: "पपीता" },
-  { name: "Orange", aliases: ["orange", "santra", "kinnow", "santre", "संतरा"], hindi: "संतरा" },
-  { name: "Grapes", aliases: ["grapes", "angoor", "angur", "अंगूर"], hindi: "अंगूर" },
+  { name: "Orange", aliases: ["orange", "oranges", "santra", "narangi", "संतरा"], hindi: "संतरा" },
+  { name: "Grapes", aliases: ["grapes", "grape", "angoor", "अंगूर"], hindi: "अंगूर" },
 ];
 
 function formatVendorConfirmation(product, availability, price, priceUnit, lang) {
@@ -77,14 +77,6 @@ export function directInterpretSignal(text) {
       detected = c.name;
       itemMatch = c;
       break;
-    }
-  }
-
-  if (!itemMatch) {
-    const stopwords = ["aaj", "aaya", "aayi", "hai", "rate", "rupaye", "rupiya", "rs", "bhav", "per", "kg", "kilo", "thoda", "kam", "bahut", "stock", "chahiye", "bik", "raha", "bhi", "me", "aur"];
-    const cleanWords = raw.split(/\s+/).map((w) => w.replace(/[^\w\u0900-\u097F]/g, "")).filter((w) => w && !stopwords.includes(w));
-    if (cleanWords.length > 0) {
-      detected = cleanWords[0].charAt(0).toUpperCase() + cleanWords[0].slice(1);
     }
   }
 
@@ -159,34 +151,15 @@ export function directParseShoppingList(text, marketPulse = DEFAULT_DEMO_PULSE) 
   }
 
   if (!items.length) {
-    const stopwords = ["aaj", "chahiye", "aur", "thoda", "please", "me", "mujhe", "bhi", "give", "need", "want", "fresh", "kilo", "kg", "grams", "hai", "de", "do"];
-    const cleanWords = raw.split(/\s+/).map((w) => w.replace(/[^\w\u0900-\u097F]/g, "")).filter((w) => w && !stopwords.includes(w));
-    const fallbackProd = cleanWords.length > 0 ? (cleanWords[0].charAt(0).toUpperCase() + cleanWords[0].slice(1)) : "Produce";
     items.push({
-      product: fallbackProd,
+      product: "Produce",
       quantity: null,
-      known: true,
-      status: "ok",
-      availability: "Demand Registered",
-      demand: "Active Shopper Interest",
+      known: false,
+      status: "unknown",
+      availability: "Unknown",
+      demand: "Unknown",
       reportedPriceSignal: null,
-      confidence: "Local Signal",
     });
-  }
-
-  const hasDevanagari = /[\u0900-\u097F]/.test(text || "");
-  const hasHinglish = ["aaj", "hai", "ka", "ki", "ke", "thoda", "kam", "bahut", "rupaye", "chahiye"].some((w) => raw.includes(w));
-  const lang = hasDevanagari ? "HINDI" : hasHinglish ? "HINGLISH" : "ENGLISH";
-
-  let confirmationText = "";
-  if (lang === "HINDI" || lang === "HINGLISH") {
-    confirmationText = "मैंने समझा:\n" + items.map((it) => {
-      const match = CANONICAL_MAP.find((m) => m.name === it.product);
-      const nameHi = match ? match.hindi : it.product;
-      return it.quantity ? `${it.quantity} ${nameHi}` : nameHi;
-    }).join("\n");
-  } else {
-    confirmationText = "Understood:\n" + items.map((it) => it.quantity ? `${it.quantity} ${it.product}` : it.product).join("\n");
   }
 
   const tightCount = items.filter((i) => i.status === "tight").length;
@@ -194,7 +167,7 @@ export function directParseShoppingList(text, marketPulse = DEFAULT_DEMO_PULSE) 
     ? `BazaarMind noticed ${tightCount} item${tightCount > 1 ? "s" : ""} on your list with tighter availability today.`
     : "Items on your list show good or normal availability at INA Market today.";
 
-  return { ok: true, items, tightCount, summary, confirmationText, language: lang, persisted: false };
+  return { ok: true, items, tightCount, summary, persisted: false };
 }
 
 export function directAskBazaar(question, marketPulse = DEFAULT_DEMO_PULSE, dataSource = "DEMO") {
