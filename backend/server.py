@@ -816,10 +816,32 @@ async def ask_bazaar(req: AskRequest):
     pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=req.dataSource)
     market = await db.markets.find_one({"id": req.marketId}, {"_id": 0})
     market_name = market["name"] if market else "INA Market · South Delhi"
-    if not pulse["products"]:
+
+    # Intelligent fallback: If no products were found in the requested market/dataSource slice
+    # (e.g. user is in PILOT participant mode where real field signals haven't accumulated yet,
+    # or user selected a demo market like Sarojini or Ghazipur that relies on benchmark demo signals):
+    if not pulse.get("products"):
+        # 1. Check if the market has DEMO signals (e.g. demo-ina)
+        if req.dataSource == "PILOT":
+            demo_pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source="DEMO")
+            if demo_pulse.get("products"):
+                pulse = demo_pulse
+
+        # 2. If still no products, check if we should fall back to primary benchmark INA Market signals
+        if not pulse.get("products") and (
+            req.marketId in ("demo-ina", "default", "", None)
+            or req.dataSource == "DEMO"
+            or str(req.marketId).startswith("demo-")
+        ):
+            ina_pulse = await intelligence.compute_market_pulse(db, "demo-ina", data_source="DEMO")
+            if ina_pulse.get("products"):
+                pulse = ina_pulse
+                market_name = "INA Market · South Delhi"
+
+    if not pulse.get("products"):
         return {
             "ok": True,
-            "answer": "BazaarMind doesn't have enough local signals in this market yet to answer that with certainty.",
+            "answer": f"BazaarMind doesn't have enough local signals in {market_name} yet to answer that with certainty.",
             "live": True,
             "totalSignals": 0,
             "vendorObservations": 0,

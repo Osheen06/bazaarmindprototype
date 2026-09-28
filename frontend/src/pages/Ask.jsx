@@ -16,7 +16,7 @@ const QUESTIONS = [
 ];
 
 export default function Ask() {
-  const { marketId, dataSource, currentMarket } = useApp();
+  const { marketId, setMarketId, dataSource, currentMarket } = useApp();
 
   const [messages, setMessages] = useState([
     {
@@ -62,7 +62,8 @@ export default function Ask() {
     trackEvent("ask_bazaarmind_used", { marketId, dataSource, question: value });
 
     try {
-      const response = await askBazaar(value, marketId, dataSource);
+      const targetMarket = marketId || "demo-ina";
+      const response = await askBazaar(value, targetMarket, dataSource);
       const assistantMsgId = `assistant-${Date.now()}`;
       setMessages((existing) => [
         ...existing,
@@ -117,19 +118,32 @@ export default function Ask() {
 
       {/* Market Mode Banner */}
       <div className="mt-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 px-3.5 py-2">
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-xs flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-emerald-950">Grounding Source:</span>
             <span className="text-emerald-800 font-medium">
-              Live INA Market stall observations (48 active sensors)
+              {currentMarket?.id === "demo-ina" || !currentMarket
+                ? "Live INA Market stall observations (48 active sensors)"
+                : `${currentMarket?.name} local signals`}
             </span>
           </div>
-          <Link
-            to="/pulse"
-            className="text-[11px] font-medium text-[#1E5631] hover:underline flex items-center gap-1"
-          >
-            View Market Pulse <ArrowRight className="h-3 w-3" />
-          </Link>
+          <div className="flex items-center gap-2.5">
+            {currentMarket?.id !== "demo-ina" && (
+              <button
+                type="button"
+                onClick={() => setMarketId && setMarketId("demo-ina")}
+                className="text-[11px] font-semibold text-[#1E5631] hover:underline bg-white border border-[#E5DEC9] px-2.5 py-0.5 rounded-full shadow-2xs"
+              >
+                Switch to INA Market
+              </button>
+            )}
+            <Link
+              to="/pulse"
+              className="text-[11px] font-medium text-[#1E5631] hover:underline flex items-center gap-1"
+            >
+              View Market Pulse <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -174,26 +188,44 @@ export default function Ask() {
               {message.role === "assistant" && (message.totalSignals != null || message.vendorObservations != null) && (
                 <div className="mt-3 pt-2 border-t border-[#F0EBDE] flex flex-wrap items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-2 text-[#5C6360]">
-                    {message.vendorObservations != null && (
+                    {(message.vendorObservations != null && message.vendorObservations > 0) && (
                       <span className="inline-flex items-center gap-1 bg-[#F7F4EE] px-2 py-0.5 rounded-md font-mono text-[11px]">
                         <Store className="h-3 w-3 text-[#1E5631]" />
                         {message.vendorObservations} vendor obs
                       </span>
                     )}
-                    {message.shopperSignals != null && (
+                    {(message.shopperSignals != null && message.shopperSignals > 0) && (
                       <span className="inline-flex items-center gap-1 bg-[#F7F4EE] px-2 py-0.5 rounded-md font-mono text-[11px]">
                         <ShoppingBag className="h-3 w-3 text-[#2D6A4F]" />
                         {message.shopperSignals} shopper signals
                       </span>
                     )}
+                    {message.totalSignals === 0 && (
+                      <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md text-[11px] font-medium">
+                        Zero local signals recorded yet
+                      </span>
+                    )}
                   </div>
 
-                  <Link
-                    to="/pulse"
-                    className="text-[11px] font-semibold text-[#1E5631] hover:underline flex items-center gap-1 ml-auto"
-                  >
-                    Inspect evidence signals <ArrowRight className="h-3 w-3" />
-                  </Link>
+                  <div className="flex items-center gap-2 ml-auto">
+                    {message.totalSignals === 0 && currentMarket?.id !== "demo-ina" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (setMarketId) setMarketId("demo-ina");
+                        }}
+                        className="text-[11px] font-semibold text-[#1E5631] hover:underline bg-[#F7F4EE] px-2.5 py-1 rounded-full border border-[#E5DEC9]"
+                      >
+                        Explore INA Market instead
+                      </button>
+                    )}
+                    <Link
+                      to="/pulse"
+                      className="text-[11px] font-semibold text-[#1E5631] hover:underline flex items-center gap-1"
+                    >
+                      Inspect evidence signals <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </div>
                 </div>
               )}
             </motion.div>

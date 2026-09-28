@@ -108,3 +108,34 @@ def test_markets_directory_routing(client):
     # Verify market types include specialty, weekly or mandi
     types = [m.get("marketType") for m in data["markets"]]
     assert any("Specialty" in str(t) or "Weekly" in str(t) or "Mandi" in str(t) for t in types)
+
+def test_ask_bazaar_pilot_fallback(client):
+    """When a participant asks Ask BazaarMind in PILOT mode before pilot signals exist,
+    it must gracefully ground in benchmark DEMO signals instead of returning 0 signals."""
+    payload = {
+        "question": "Do we have enough signals to say tomatoes are scarce?",
+        "marketId": "demo-ina",
+        "dataSource": "PILOT"
+    }
+    res = client.post("/api/ask", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["ok"] is True
+    assert data.get("totalSignals", 0) > 0
+    assert "tomatoes" in data.get("answer", "").lower() or "tamatar" in data.get("answer", "").lower()
+
+def test_ask_bazaar_demo_market_fallback(client):
+    """When querying another demo market (like Sarojini Nagar), it must fall back
+    to benchmark demo signals rather than returning 0 signals."""
+    payload = {
+        "question": "What is happening with onions?",
+        "marketId": "demo-sarojini",
+        "dataSource": "DEMO"
+    }
+    res = client.post("/api/ask", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["ok"] is True
+    assert data.get("totalSignals", 0) > 0
+    assert "onions" in data.get("answer", "").lower() or "pyaz" in data.get("answer", "").lower()
+
