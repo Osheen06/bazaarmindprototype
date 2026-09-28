@@ -361,17 +361,18 @@ export const parseShoppingList = async (text, marketId, participantId, persist =
 // ---------------------------------------------------------
 
 export const askBazaar = async (question, marketId, dataSource = "DEMO") => {
+  const effectiveDs = marketId?.startsWith("demo-") ? "DEMO" : (dataSource || "DEMO");
   try {
     const r = await client.post("/ask-bazaar", {
       question,
       marketId,
-      dataSource,
+      dataSource: effectiveDs,
     });
     if (r.data && r.data.ok) return r.data;
   } catch {}
 
-  // Direct client execution with Live Gemini 3.5 Flash Lite
-  return directAskBazaar(question, DEFAULT_DEMO_PULSE, dataSource);
+  // Direct client execution with fallback
+  return directAskBazaar(question, DEFAULT_DEMO_PULSE, effectiveDs);
 };
 
 // ---------------------------------------------------------

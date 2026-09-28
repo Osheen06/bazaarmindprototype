@@ -310,6 +310,11 @@ def _determine_market_state(market_doc: Dict[str, Any], signal_count: int) -> st
         return "DISCOVERED"
     return "INSUFFICIENT_DATA"
 
+@api.get("/markets/directory")
+async def markets_directory_endpoint():
+    """Module 6 & 7: Market Directory supporting Neighbourhood, Weekly, Farmers, and Mandi markets."""
+    return await intelligence.get_markets_directory(db)
+
 @api.get("/markets/{market_id}")
 async def get_market_by_id(market_id: str):
     m = await db.markets.find_one({"id": market_id}, {"_id": 0})
@@ -339,7 +344,7 @@ async def get_market_pulse_canonical(market_id: str, dataSource: Optional[str] =
     market = await db.markets.find_one({"id": market_id}, {"_id": 0})
     if not market and market_id == "demo-ina":
         market = dict(demo_seed.DEMO_MARKET)
-    ds = dataSource or ("DEMO" if market_id.startswith("demo-") else "REAL")
+    ds = "DEMO" if market_id.startswith("demo-") else (dataSource or "REAL")
     pulse = await intelligence.compute_market_pulse(db, market_id, data_source=ds)
     sig_count = pulse.get("totalSignals", 0)
     state = _determine_market_state(market or {"id": market_id}, sig_count)
@@ -357,7 +362,7 @@ async def get_market_pulse_canonical(market_id: str, dataSource: Optional[str] =
 
 @api.get("/markets/{market_id}/evidence")
 async def get_market_evidence(market_id: str, dataSource: Optional[str] = None):
-    ds = dataSource or ("DEMO" if market_id.startswith("demo-") else "REAL")
+    ds = "DEMO" if market_id.startswith("demo-") else (dataSource or "REAL")
     query: Dict[str, Any] = {"marketId": market_id, "status": "confirmed"}
     if ds in ("DEMO", "PILOT", "REAL"):
         query["dataSource"] = ds
@@ -600,10 +605,11 @@ async def get_products():
 # ----------------------------- Market Pulse -----------------------------
 @api.get("/market-pulse")
 async def market_pulse(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
+    ds = "DEMO" if marketId.startswith("demo-") else dataSource
     market = await db.markets.find_one({"id": marketId}, {"_id": 0})
-    pulse = await intelligence.compute_market_pulse(db, marketId, data_source=dataSource)
+    pulse = await intelligence.compute_market_pulse(db, marketId, data_source=ds)
     pulse["market"] = market or {"id": marketId, "name": "INA Market · South Delhi"}
-    pulse["dataSource"] = dataSource
+    pulse["dataSource"] = ds
     pulse["ok"] = True
     return pulse
 
@@ -693,7 +699,19 @@ async def shopping_list_parse(req: ShoppingListRequest):
         logger.exception("list parse failed")
         return JSONResponse(status_code=200, content={"ok": False, "error": "BazaarMind couldn't read that list right now. Please try again."})
 
-    data_source = await _resolve_source_async(req.participantId, None)
+    if parsed.get("isGreeting") or not parsed.get("items"):
+        return {
+            "ok": True,
+            "items": [],
+            "isGreeting": True,
+            "tightCount": 0,
+            "summary": None,
+            "language": parsed.get("language", "ENGLISH"),
+            "confirmationText": None,
+            "persisted": False,
+        }
+
+    data_source = "DEMO" if req.marketId.startswith("demo-") else await _resolve_source_async(req.participantId, None)
     pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=data_source)
     pulse_map = {p["product"]: p for p in pulse["products"]}
 
@@ -751,7 +769,7 @@ async def shopper_parse_alias(req: ShoppingListRequest):
 
 @api.post("/shopper/plan-route")
 async def plan_shopper_route_endpoint(req: PlanRouteRequest):
-    data_source = req.dataSource or "DEMO"
+    data_source = "DEMO" if req.marketId.startswith("demo-") else (req.dataSource or "DEMO")
     pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=data_source)
     market = await db.markets.find_one({"id": req.marketId}, {"_id": 0})
     market_name = market["name"] if market else "INA Market · South Delhi"
@@ -808,7 +826,8 @@ async def plan_shopper_route_endpoint(req: PlanRouteRequest):
 # ----------------------------- Ask BazaarMind -----------------------------
 @api.post("/ask-bazaar")
 async def ask_bazaar(req: AskRequest):
-    pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=req.dataSource)
+    effective_ds = "DEMO" if req.marketId.startswith("demo-") else (req.dataSource or "DEMO")
+    pulse = await intelligence.compute_market_pulse(db, req.marketId, data_source=effective_ds)
     market = await db.markets.find_one({"id": req.marketId}, {"_id": 0})
     market_name = market["name"] if market else "INA Market · South Delhi"
     if not pulse["products"]:
@@ -823,7 +842,7 @@ async def ask_bazaar(req: AskRequest):
         }
     context = intelligence.build_pulse_context(pulse, market_name)
     try:
-        answer = await gemini_service.ask_bazaar(req.question, context, session_id=str(uuid.uuid4()), data_source=req.dataSource)
+        answer = await gemini_service.ask_bazaar(req.question, context, session_id=str(uuid.uuid4()), data_source=effective_ds)
         return {
             "ok": True,
             "answer": answer,
@@ -875,7 +894,8 @@ async def voice_transcribe(audio: UploadFile = File(...)):
 # ----------------------------- Vendor demand -----------------------------
 @api.get("/vendor/demand")
 async def vendor_demand(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
-    cursor = db.market_signals.find({"marketId": marketId, "source": "SHOPPER", "status": "confirmed", "dataSource": dataSource}, {"_id": 0})
+    ds = "DEMO" if marketId.startswith("demo-") else dataSource
+    cursor = db.market_signals.find({"marketId": marketId, "source": "SHOPPER", "status": "confirmed", "dataSource": ds}, {"_id": 0})
     signals = await cursor.to_list(5000)
     counts: Dict[str, int] = {}
     for s in signals:
@@ -895,9 +915,10 @@ async def vendor_demand(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"
 # ----------------------------- Market network -----------------------------
 @api.get("/market-network")
 async def market_network(marketId: str = DEFAULT_MARKET, dataSource: str = "DEMO"):
+    ds = "DEMO" if marketId.startswith("demo-") else dataSource
     market = await db.markets.find_one({"id": marketId}, {"_id": 0})
     vendors = await db.vendors.find({"marketId": marketId}, {"_id": 0}).to_list(100)
-    cursor = db.market_signals.find({"marketId": marketId, "status": "confirmed", "dataSource": dataSource}, {"_id": 0})
+    cursor = db.market_signals.find({"marketId": marketId, "status": "confirmed", "dataSource": ds}, {"_id": 0})
     signals = await cursor.to_list(5000)
 
     vendor_counts: Dict[str, int] = {}
@@ -966,11 +987,6 @@ async def snapshots_trends(marketId: str = DEFAULT_MARKET, dataSource: str = "DE
 async def mandi_intelligence_endpoint(product: Optional[str] = Query("Tomatoes")):
     """Module 8: Mandi Intelligence & Farmer Confidence ('Konsi Mandi Jaun?')"""
     return await intelligence.compute_mandi_intelligence(db, product)
-
-@api.get("/markets/directory")
-async def markets_directory_endpoint():
-    """Module 6 & 7: Market Directory supporting Neighbourhood, Weekly, Farmers, and Mandi markets."""
-    return await intelligence.get_markets_directory(db)
 
 # ----------------------------- Seasonality & Wastage -----------------------------
 @api.get("/intelligence/seasonality")

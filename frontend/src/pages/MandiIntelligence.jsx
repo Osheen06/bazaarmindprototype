@@ -57,8 +57,8 @@ export default function MandiIntelligence() {
               LIVE DELHI NCR WHOLESALE ARBITRAGE
             </span>
           </div>
-          <h1 className="font-display text-3xl font-extrabold text-[#1E2022] mt-1">
-            कौन सी मंडी जाऊं? / Which Mandi Should I Go To?
+          <h1 className="font-display text-3xl font-extrabold text-[#1E2022] mt-1 tracking-normal" style={{ letterSpacing: "normal" }}>
+            <span lang="hi" className="font-hindi">कौन सी मंडी जाऊं?</span> / Which Mandi Should I Go To?
           </h1>
           <p className="text-xs sm:text-sm text-[#5C6360] mt-1 max-w-2xl leading-relaxed">
             Connecting neighborhood retail demand with wholesale mandis and peri-urban farmers. Helping growers and suppliers identify where buyers are looking before distress sales happen.
