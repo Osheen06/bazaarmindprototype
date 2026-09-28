@@ -26,74 +26,84 @@ CANONICAL_PRODUCTS = [
     "Tomatoes", "Potatoes", "Onions", "Coriander",
     "Lemon", "Banana", "Apple", "Chilli", "Ginger",
     "Carrots", "Spinach", "Avocados", "Mushrooms", "Bell Peppers", "Bok Choy",
-    "Mango", "Garlic", "Cauliflower", "Cabbage", "Okra", "Peas", "Cucumber",
-    "Brinjal", "Bottle Gourd", "Bitter Gourd", "Pomegranate", "Watermelon", "Papaya", "Orange", "Grapes",
+    "Mango", "Garlic", "Cauliflower", "Cabbage", "Okra",
+    "Peas", "Cucumber", "Brinjal", "Bottle Gourd", "Bitter Gourd",
+    "Pomegranate", "Watermelon", "Papaya", "Orange", "Grapes",
 ]
 
-HINDI_NAME_MAP = {
-    "Tomatoes": "टमाटर",
-    "Potatoes": "आलू",
-    "Onions": "प्याज",
-    "Coriander": "धनिया",
-    "Lemon": "नींबू",
-    "Banana": "केला",
-    "Apple": "सेब",
-    "Chilli": "हरी मिर्च",
-    "Ginger": "अदरक",
-    "Carrots": "गाजर",
-    "Spinach": "पालक",
-    "Avocados": "एवोकाडो",
-    "Mushrooms": "मशरूम",
-    "Bell Peppers": "शिमला मिर्च",
-    "Bok Choy": "पाक चोई",
-    "Mango": "आम",
-    "Garlic": "लहसुन",
-    "Cauliflower": "फूल गोभी",
-    "Cabbage": "पत्ता गोभी",
-    "Okra": "भिंडी",
-    "Peas": "मटर",
-    "Cucumber": "खीरा",
-    "Brinjal": "बैंगन",
-    "Bottle Gourd": "लौकी",
-    "Bitter Gourd": "करेला",
-    "Pomegranate": "अनार",
-    "Watermelon": "तरबूज",
-    "Papaya": "पपीता",
-    "Orange": "संतरा",
-    "Grapes": "अंगूर",
+PRODUCT_ALIASES = {
+    # Tomatoes
+    "tamatar": "Tomatoes", "tomato": "Tomatoes", "tomatoes": "Tomatoes", "टमाटर": "Tomatoes",
+    # Potatoes
+    "aloo": "Potatoes", "potato": "Potatoes", "potatoes": "Potatoes", "alu": "Potatoes", "आलू": "Potatoes",
+    # Onions
+    "pyaz": "Onions", "pyaaz": "Onions", "onion": "Onions", "onions": "Onions", "kanda": "Onions", "प्याज": "Onions", "प्याज़": "Onions",
+    # Coriander
+    "dhaniya": "Coriander", "dhania": "Coriander", "coriander": "Coriander", "cilantro": "Coriander", "धनिया": "Coriander",
+    # Lemon
+    "nimbu": "Lemon", "neebu": "Lemon", "lemon": "Lemon", "lemons": "Lemon", "lime": "Lemon", "नींबू": "Lemon", "नीबू": "Lemon",
+    # Banana
+    "kela": "Banana", "banana": "Banana", "bananas": "Banana", "केला": "Banana",
+    # Apple
+    "seb": "Apple", "saib": "Apple", "apple": "Apple", "apples": "Apple", "सेब": "Apple",
+    # Chilli
+    "hari mirch": "Chilli", "mirch": "Chilli", "chili": "Chilli", "chilli": "Chilli", "chillies": "Chilli", "chilies": "Chilli", "green chili": "Chilli", "green chilies": "Chilli", "मिर्च": "Chilli", "हरी मिर्च": "Chilli",
+    # Ginger
+    "adrak": "Ginger", "adrakh": "Ginger", "ginger": "Ginger", "अदरक": "Ginger",
+    # Carrots
+    "gajar": "Carrots", "carrot": "Carrots", "carrots": "Carrots", "गाजर": "Carrots",
+    # Spinach
+    "palak": "Spinach", "spinach": "Spinach", "पालक": "Spinach",
+    # Avocados
+    "avocado": "Avocados", "avocados": "Avocados", "makhanphal": "Avocados", "एवोकाडो": "Avocados",
+    # Mushrooms
+    "mushroom": "Mushrooms", "mushrooms": "Mushrooms", "khumbi": "Mushrooms", "मशरूम": "Mushrooms",
+    # Bell Peppers
+    "shimla mirch": "Bell Peppers", "shimlamirch": "Bell Peppers", "capsicum": "Bell Peppers", "bell pepper": "Bell Peppers", "bell peppers": "Bell Peppers", "शिमला मिर्च": "Bell Peppers",
+    # Bok Choy
+    "bok choy": "Bok Choy", "pak choi": "Bok Choy", "bokchoy": "Bok Choy",
+    # Mango
+    "mango": "Mango", "mangoes": "Mango", "aam": "Mango", "aamras": "Mango", "langra": "Mango", "alphonso": "Mango", "hapus": "Mango", "आम": "Mango",
+    # Garlic
+    "garlic": "Garlic", "lahsun": "Garlic", "lehsun": "Garlic", "lasun": "Garlic", "लहसुन": "Garlic",
+    # Cauliflower
+    "cauliflower": "Cauliflower", "gobhi": "Cauliflower", "gobi": "Cauliflower", "phool gobhi": "Cauliflower", "फूल गोभी": "Cauliflower", "गोभी": "Cauliflower",
+    # Cabbage
+    "cabbage": "Cabbage", "band gobhi": "Cabbage", "bandh gobhi": "Cabbage", "bandgobhi": "Cabbage", "पत्ता गोभी": "Cabbage",
+    # Okra
+    "okra": "Okra", "bhindi": "Okra", "lady finger": "Okra", "ladyfinger": "Okra", "भिंडी": "Okra",
+    # Peas
+    "peas": "Peas", "matar": "Peas", "mutter": "Peas", "green peas": "Peas", "मटर": "Peas",
+    # Cucumber
+    "cucumber": "Cucumber", "kheera": "Cucumber", "khira": "Cucumber", "kakdi": "Cucumber", "खीरा": "Cucumber",
+    # Brinjal
+    "brinjal": "Brinjal", "baingan": "Brinjal", "eggplant": "Brinjal", "aubergine": "Brinjal", "baigan": "Brinjal", "बैंगन": "Brinjal",
+    # Bottle Gourd
+    "bottle gourd": "Bottle Gourd", "lauki": "Bottle Gourd", "ghia": "Bottle Gourd", "doodhi": "Bottle Gourd", "लौकी": "Bottle Gourd",
+    # Bitter Gourd
+    "bitter gourd": "Bitter Gourd", "karela": "Bitter Gourd", "karella": "Bitter Gourd", "करेला": "Bitter Gourd",
+    # Pomegranate
+    "pomegranate": "Pomegranate", "anar": "Pomegranate", "अनार": "Pomegranate",
+    # Watermelon
+    "watermelon": "Watermelon", "tarbooz": "Watermelon", "tarbuz": "Watermelon", "तरबूज": "Watermelon",
+    # Papaya
+    "papaya": "Papaya", "papita": "Papaya", "पपीता": "Papaya",
+    # Orange
+    "orange": "Orange", "oranges": "Orange", "santra": "Orange", "narangi": "Orange", "संतरा": "Orange",
+    # Grapes
+    "grapes": "Grapes", "grape": "Grapes", "angoor": "Grapes", "अंगूर": "Grapes",
 }
 
-PRODUCT_ALIASES = {
-    "tamatar": "Tomatoes", "tomato": "Tomatoes", "tomatoes": "Tomatoes", "टमाटर": "Tomatoes",
-    "aloo": "Potatoes", "potato": "Potatoes", "potatoes": "Potatoes", "alu": "Potatoes", "आलू": "Potatoes",
-    "pyaz": "Onions", "pyaaz": "Onions", "onion": "Onions", "onions": "Onions", "kanda": "Onions", "प्याज": "Onions", "प्याज़": "Onions",
-    "dhaniya": "Coriander", "dhania": "Coriander", "coriander": "Coriander", "cilantro": "Coriander", "धनिया": "Coriander",
-    "nimbu": "Lemon", "neebu": "Lemon", "lemon": "Lemon", "lemons": "Lemon", "lime": "Lemon", "नींबू": "Lemon", "नीबू": "Lemon",
-    "kela": "Banana", "banana": "Banana", "bananas": "Banana", "केला": "Banana",
-    "seb": "Apple", "saib": "Apple", "apple": "Apple", "apples": "Apple", "सेब": "Apple",
-    "hari mirch": "Chilli", "mirch": "Chilli", "chili": "Chilli", "chilli": "Chilli", "chillies": "Chilli", "chilies": "Chilli", "green chili": "Chilli", "green chilies": "Chilli", "मिर्च": "Chilli", "हरी मिर्च": "Chilli",
-    "adrak": "Ginger", "adrakh": "Ginger", "ginger": "Ginger", "अदरक": "Ginger",
-    "gajar": "Carrots", "carrot": "Carrots", "carrots": "Carrots", "गाजर": "Carrots",
-    "palak": "Spinach", "spinach": "Spinach", "पालक": "Spinach",
-    "avocado": "Avocados", "avocados": "Avocados", "makhanphal": "Avocados", "एवोकाडो": "Avocados",
-    "mushroom": "Mushrooms", "mushrooms": "Mushrooms", "khumbi": "Mushrooms", "मशरूम": "Mushrooms",
-    "shimla mirch": "Bell Peppers", "shimlamirch": "Bell Peppers", "capsicum": "Bell Peppers", "bell pepper": "Bell Peppers", "bell peppers": "Bell Peppers", "शिमला मिर्च": "Bell Peppers",
-    "bok choy": "Bok Choy", "pak choi": "Bok Choy", "bokchoy": "Bok Choy",
-    "mango": "Mango", "mangoes": "Mango", "aam": "Mango", "aamras": "Mango", "langra": "Mango", "alphonso": "Mango", "safeda": "Mango", "chaunsa": "Mango", "dussehri": "Mango", "totapuri": "Mango", "आम": "Mango",
-    "garlic": "Garlic", "lehsun": "Garlic", "lahsun": "Garlic", "lahsan": "Garlic", "लहसुन": "Garlic",
-    "cauliflower": "Cauliflower", "gobhi": "Cauliflower", "gobi": "Cauliflower", "phool gobhi": "Cauliflower", "phool gobi": "Cauliflower", "फूल गोभी": "Cauliflower",
-    "cabbage": "Cabbage", "patta gobhi": "Cabbage", "bandh gobhi": "Cabbage", "band gobhi": "Cabbage", "patta gobi": "Cabbage", "पत्ता गोभी": "Cabbage",
-    "okra": "Okra", "ladyfinger": "Okra", "lady finger": "Okra", "bhindi": "Okra", "भिंडी": "Okra",
-    "peas": "Peas", "matar": "Peas", "green peas": "Peas", "मटर": "Peas",
-    "cucumber": "Cucumber", "kheera": "Cucumber", "khira": "Cucumber", "kakdi": "Cucumber", "खीरा": "Cucumber",
-    "brinjal": "Brinjal", "eggplant": "Brinjal", "baingan": "Brinjal", "baigan": "Brinjal", "बैंगन": "Brinjal",
-    "bottle gourd": "Bottle Gourd", "lauki": "Bottle Gourd", "ghiya": "Bottle Gourd", "doodhi": "Bottle Gourd", "लौकी": "Bottle Gourd",
-    "bitter gourd": "Bitter Gourd", "karela": "Bitter Gourd", "करेला": "Bitter Gourd",
-    "pomegranate": "Pomegranate", "anar": "Pomegranate", "anaar": "Pomegranate", "अनार": "Pomegranate",
-    "watermelon": "Watermelon", "tarbooz": "Watermelon", "tarbuz": "Watermelon", "तरबूज": "Watermelon",
-    "papaya": "Papaya", "papita": "Papaya", "पपीता": "Papaya",
-    "orange": "Orange", "santra": "Orange", "kinnow": "Orange", "santre": "Orange", "मौसंबी": "Orange", "संतरा": "Orange",
-    "grapes": "Grapes", "angoor": "Grapes", "angur": "Grapes", "अंगूर": "Grapes",
+# Hindi name map for confirmation messages
+HINDI_NAME_MAP = {
+    "Tomatoes": "टमाटर", "Potatoes": "आलू", "Onions": "प्याज", "Coriander": "धनिया",
+    "Lemon": "नींबू", "Banana": "केला", "Apple": "सेब", "Chilli": "मिर्च",
+    "Ginger": "अदरक", "Carrots": "गाजर", "Spinach": "पालक", "Mushrooms": "मशरूम",
+    "Bell Peppers": "शिमला मिर्च", "Mango": "आम", "Garlic": "लहसुन",
+    "Cauliflower": "फूल गोभी", "Cabbage": "पत्ता गोभी", "Okra": "भिंडी",
+    "Peas": "मटर", "Cucumber": "खीरा", "Brinjal": "बैंगन",
+    "Bottle Gourd": "लौकी", "Bitter Gourd": "करेला", "Pomegranate": "अनार",
+    "Watermelon": "तरबूज", "Papaya": "पपीता", "Orange": "संतरा", "Grapes": "अंगूर",
 }
 
 AVAILABILITY_HINDI = {
@@ -196,7 +206,7 @@ def format_shopper_confirmation(items: List[Dict[str, Any]], lang: str = "HINGLI
             prod_hi = HINDI_NAME_MAP.get(p, p)
             q = it.get("quantity") or ""
             q_clean = q.replace("kilos", "किलो").replace("kilo", "किलो").replace("kg", "किलो")
-            lines.append(f"{q_clean} {prod_hi}".strip() if q_clean else str(prod_hi))
+            lines.append(f"{q_clean} {prod_hi}".strip() if q_clean else prod_hi)
         return "\n".join(lines)
     else:
         lines = ["Understood:"]
@@ -245,14 +255,21 @@ Core ground rules:
 def _rule_based_interpret(text: str) -> Dict[str, Any]:
     raw_lower = (text or "").lower().strip()
     detected_product = None
+
+    def alias_matches(alias: str, haystack: str) -> bool:
+        """Unicode-safe alias match: word boundary for ASCII, substring+space for Devanagari/multi-word."""
+        if any('\u0900' <= c <= '\u097F' for c in alias) or ' ' in alias:
+            # Devanagari or multi-word: match as substring surrounded by spaces/boundaries
+            return bool(re.search(r'(?:^|[\s,।!?])' + re.escape(alias) + r'(?:$|[\s,।!?])', haystack)) or alias in haystack
+        return bool(re.search(r'\b' + re.escape(alias) + r'\b', haystack))
+
     for alias, canon in sorted(PRODUCT_ALIASES.items(), key=lambda x: -len(x[0])):
-        if re.search(r'\b' + re.escape(alias) + r'\b', raw_lower):
+        if alias_matches(alias, raw_lower):
             detected_product = canon
             break
 
     if not detected_product:
-        clean_words = [w.strip(" ,.?!'\"") for w in raw_lower.split() if w.strip(" ,.?!'\"") not in ("aaj", "aaya", "aayi", "hai", "rate", "rupaye", "rupiya", "rs", "bhav", "per", "kg", "kilo", "thoda", "kam", "bahut", "stock", "chahiye", "bik", "raha", "bhi", "me")]
-        detected_product = clean_words[0].title() if clean_words else "Produce"
+        detected_product = "Produce"
 
     # Price extraction
     price = None
@@ -383,30 +400,38 @@ Never invent quantities. If quantity is not explicitly stated, set quantity to n
 def _rule_based_parse_list(text: str) -> Dict[str, Any]:
     raw_lower = (text or "").lower()
     has_devanagari = bool(re.search(r'[\u0900-\u097F]', text))
-    has_hinglish = any(w in raw_lower for w in ["aaj", "chahiye", "aur", "thoda", "kilo", "tamatar", "aloo", "pyaz", "dhaniya"])
+    has_hinglish = any(w in raw_lower for w in ["aaj", "chahiye", "aur", "thoda", "kilo", "tamatar", "aloo", "pyaz", "dhaniya", "mujhe"])
     lang = "HINDI" if has_devanagari else ("HINGLISH" if has_hinglish else "ENGLISH")
+
+    def alias_matches_list(alias: str, haystack: str) -> bool:
+        """Unicode-safe alias match for Devanagari and multi-word aliases."""
+        if any('\u0900' <= c <= '\u097F' for c in alias) or ' ' in alias:
+            return bool(re.search(r'(?:^|[\s,।!?])' + re.escape(alias) + r'(?:$|[\s,।!?])', haystack)) or alias in haystack
+        return bool(re.search(r'\b' + re.escape(alias) + r'\b', haystack))
 
     items = []
     seen = set()
     for alias, canon in sorted(PRODUCT_ALIASES.items(), key=lambda x: -len(x[0])):
         if canon in seen:
             continue
-        match = re.search(r'\b' + re.escape(alias) + r'\b', raw_lower)
-        if match:
+        if alias_matches_list(alias, raw_lower):
             seen.add(canon)
             qty = None
-            prefix = raw_lower[:match.start()].strip().split()
-            if prefix:
-                candidate_qty = " ".join(prefix[-2:]) if len(prefix) >= 2 else prefix[-1]
-                qty_match = re.search(r'(\d+(?:\.\d+)?\s*(?:kg|kilo|kilograms?|bunch|bundle|dozen|g|grams?))', candidate_qty)
-                if qty_match:
-                    qty = qty_match.group(1)
-                elif re.match(r'^\d+$', prefix[-1]):
-                    qty = prefix[-1] + " kg"
+            # Try to find quantity before the alias match
+            alias_pos = raw_lower.find(alias)
+            if alias_pos >= 0:
+                prefix = raw_lower[:alias_pos].strip().split()
+                if prefix:
+                    candidate_qty = " ".join(prefix[-2:]) if len(prefix) >= 2 else prefix[-1]
+                    qty_match = re.search(r'(\d+(?:\.\d+)?\s*(?:kg|kilo|kilograms?|bunch|bundle|dozen|g|grams?))', candidate_qty)
+                    if qty_match:
+                        qty = qty_match.group(1)
+                    elif re.match(r'^\d+$', prefix[-1]):
+                        qty = prefix[-1] + " kg"
             items.append({"product": canon, "quantity": qty})
 
     if not items:
-        clean_words = [w.strip(" ,.?!'\"") for w in raw_lower.split() if w.strip(" ,.?!'\"") not in ("aaj", "chahiye", "aur", "thoda", "please", "me", "mujhe", "bhi", "give", "need", "want", "fresh", "kilo", "kg", "grams", "hai", "de", "do")]
+        clean_words = [w.strip(" ,.?!'\"।") for w in raw_lower.split() if w.strip(" ,.?!'\"।") not in ("aaj", "chahiye", "aur", "thoda", "please", "me", "mujhe", "bhi", "give", "need", "want", "fresh", "kilo", "kg", "grams", "hai", "de", "do", "aaya", "aayi")]
         if clean_words:
             items.append({"product": clean_words[0].title(), "quantity": None})
         else:
